@@ -1,4 +1,5 @@
 """
+Main file that will start the Flask app.
 Imports the create_app() function from app/__init__.py
 Calls create_app() to initialize and configure Flask.
 """
