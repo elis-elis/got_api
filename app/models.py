@@ -10,10 +10,10 @@ class Character(db.Model):
     animal = db.Column(db.String(50), nullable=True)
     symbol = db.Column(db.String(50), nullable=True)
     nickname = db.Column(db.String(50), nullable=True)
-    role = db.Column(db.String(100), nullable=True)
+    role = db.Column(db.String(100), nullable=False)
     age = db.Column(db.Integer, nullable=True)
     death = db.Column(db.Integer, nullable=True)
-    strength = db.Column(db.String(255), nullable=True)
+    strength = db.Column(db.String(100), nullable=False)
 
     def __repr__(self):
         # method helps in debugging by providing a string representation
