@@ -16,4 +16,5 @@ class Character(db.Model):
     strength = db.Column(db.String(255), nullable=True)
 
     def __repr__(self):
+        # method helps in debugging by providing a string representation
         return f"<Character {self.name} of House {self.house}>"
