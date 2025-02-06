@@ -1,8 +1,15 @@
 """
-This file:
-Creates a Flask app.
-Configures the database.
-Initialize extensions.
+This file is responsible for:
+- Creating and configuring a Flask application instance.
+- Setting up the SQLAlchemy database connection.
+- Enabling database migrations using Flask-Migrate.
+- Configuring JWT authentication for secure API access.
+
+Usage:
+    - The `create_app()` function is called to initialize the Flask app.
+    - The app is configured using the settings in `app.config.Config`.
+    - Extensions like `db` (SQLAlchemy), `migrate` (Flask-Migrate), and `jwt` (JWTManager) are initialized.
+    - Blueprints can be registered within the `create_app()` function to modularize routes.
 """
 
 from flask import Flask
@@ -18,6 +25,10 @@ jwt = JWTManager()
 
 
 def create_app():
+    """
+    This function creates a new Flask application instance, applies configuration settings,
+    initializes extensions (database, migration, JWT authentication), and registers blueprints.
+    """
     app = Flask(__name__)
 
     # Load configuration
