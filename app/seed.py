@@ -54,6 +54,7 @@ def seed_database():
 
         # Insert characters into the database if they don't already exist
         for character_data in characters:  # characters is a list of dictionaries (loaded from characters.json)
+
             # If the query finds a match, existing_character will be an object; otherwise, it will be None
             existing_character = Character.query.filter_by(name=character_data["name"]).first()
             if not existing_character:

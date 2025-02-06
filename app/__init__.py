@@ -18,6 +18,7 @@ from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
 from app.config import Config
 
+
 # Initialize database / extensions
 db = SQLAlchemy()
 migrate = Migrate()
@@ -40,7 +41,7 @@ def create_app():
     jwt.init_app(app)
 
     # Register blueprints
-    # from app.routes import main
-    # app.register_blueprint(main)
+    from app.routes import characters_bp
+    app.register_blueprint(characters_bp)
 
     return app
