@@ -47,6 +47,23 @@ class Character(db.Model):
     house = db.relationship("House", back_populates="characters")
     strength = db.relationship("Strength", back_populates="characters")
 
+    def to_dict(self):
+        """
+        Convert the Character object to a dictionary, including related models.
+        """
+        return {
+            "id": self.id,
+            "name": self.name,
+            "house": {"id": self.house.id, "name": self.house.name} if self.house else None,
+            "animal": self.animal,
+            "symbol": self.symbol,
+            "nickname": self.nickname,
+            "role": self.role,
+            "age": self.age,
+            "death": self.death,
+            "strength": {"id": self.strength.id, "description": self.strength.description},
+        }
+
     def __repr__(self):
         # method helps in debugging by providing a string representation
         return f"<Character {self.name}>"
