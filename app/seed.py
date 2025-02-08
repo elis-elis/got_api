@@ -1,29 +1,10 @@
 """
 Database Seeding Script
-
-This script populates the PostgreSQL database with initial character data from a JSON file.
-It ensures that duplicate entries are not added by checking for existing characters before insertion.
-
-Usage:
-    Run this script to seed the database:
-        $ python app/seed.py
-
-    The script performs the following:
-    - Loads character data from `app/characters.json`
-    - Checks if a character already exists in the database (to prevent duplicates)
-    - Inserts new characters if they do not already exist
-    - Commits the transaction to the database
-
-Modules:
-    - `json`: Used for reading character data from a JSON file.
-    - `app.db`: Contains the database instance (`db`) initialized in `__init__.py`.
-    - `app.create_app`: Initializes a Flask application context to interact with the database.
-    - `app.models`: Defines the `Character` model representing the database table.
 """
 
 import json
 from app import db, create_app
-from app.models import Character
+from app.models import Character, House, Strength
 
 
 # Initialize the app and database
@@ -39,10 +20,6 @@ def seed_database():
     - Commits the transaction
 
     The function runs within an application context to allow database operations.
-
-    Raises:
-        FileNotFoundError: If the `characters.json` file is missing.
-        JSONDecodeError: If the file is not in valid JSON format.
     """
     with app.app_context():
         try:
@@ -52,13 +29,37 @@ def seed_database():
             print(f"Error loading character data: {e}")
             return
 
-        # Insert characters into the database if they don't already exist
-        for character_data in characters:  # characters is a list of dictionaries (loaded from characters.json)
+        # Insert houses and strengths if they don't already exist
+        for character_data in characters:
+            # Check if house already exists
+            house_name = character_data.get("house")
+            house = House.query.filter_by(name=house_name).first() if house_name else None
+            if not house and house_name:
+                house = House(name=house_name)
+                db.session.add(house)
 
+            # Check if strength already exists
+            strength_description = character_data.get("strength")
+            strength = Strength.query.filter_by(description=strength_description).first() if strength_description else None
+            if not strength and strength_description:
+                strength = Strength(description=strength_description)
+                db.session.add(strength)
+
+            # Check if character already exists
             # If the query finds a match, existing_character will be an object; otherwise, it will be None
             existing_character = Character.query.filter_by(name=character_data["name"]).first()
             if not existing_character:
-                character = Character(**character_data)  # unpacks the dictionary into keyword arguments
+                character = Character(
+                    name=character_data["name"],
+                    house=house,
+                    animal=character_data.get("animal"),
+                    symbol=character_data.get("symbol"),
+                    nickname=character_data.get("nickname"),
+                    role=character_data["role"],
+                    age=character_data.get("age"),
+                    death=character_data.get("death"),
+                    strength=strength
+                )
                 db.session.add(character)
 
         db.session.commit()
