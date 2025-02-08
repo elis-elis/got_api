@@ -8,23 +8,11 @@ from flask import Blueprint, request, jsonify
 from app import db
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.models import Character
-from app.schemas import CharacterCreateSchema, CharacterResponseSchema
+from app.schemas import CharacterCreateSchema
 from pydantic import ValidationError
 
-# Blueprint for authenticated routes
-auth_protected_bp = Blueprint("auth_protected", __name__)
-# Create a Blueprint
+# Create a Blueprint for character-related routes
 characters_bp = Blueprint("characters", __name__)
-
-
-# Example of a protected route
-@auth_protected_bp.route('/protected', methods=['GET'])
-@jwt_required()
-def protected():
-    """
-    Protected route that requires a valid JWT token in the Authorization header.
-    """
-    return jsonify(message="You have access to this protected route"), 200
 
 
 @characters_bp.route('/characters', methods=['POST'])
