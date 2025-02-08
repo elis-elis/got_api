@@ -37,6 +37,8 @@ def seed_database():
             if not house and house_name:
                 house = House(name=house_name)
                 db.session.add(house)
+                print(f"Inserting House: {house_name} → ID: {house.id if house else 'NEW'}")
+                db.session.flush()  # Get the ID before committing
 
             # Check if strength already exists
             strength_description = character_data.get("strength")
@@ -44,6 +46,8 @@ def seed_database():
             if not strength and strength_description:
                 strength = Strength(description=strength_description)
                 db.session.add(strength)
+                print(f"Inserting Strength: {strength_description} → ID: {strength.id if strength else 'NEW'}")
+                db.session.flush()
 
             # Check if character already exists
             # If the query finds a match, existing_character will be an object; otherwise, it will be None
