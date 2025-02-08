@@ -6,13 +6,25 @@ That's why I am using this schema to validate incoming data before inserting it 
 
 from flask import Blueprint, request, jsonify
 from app import db
+from flask_jwt_extended import jwt_required
 from app.models import Character
 from app.schemas import CharacterCreateSchema, CharacterResponseSchema
 from pydantic import ValidationError
 
-
+# Blueprint for authenticated routes
+auth_protected_bp = Blueprint("auth_protected", __name__)
 # Create a Blueprint
 characters_bp = Blueprint("characters", __name__)
+
+
+# Example of a protected route
+@auth_protected_bp.route('/protected', methods=['GET'])
+@jwt_required()
+def protected():
+    """
+    Protected route that requires a valid JWT token in the Authorization header.
+    """
+    return jsonify(message="You have access to this protected route"), 200
 
 
 @characters_bp.route("/characters", methods=["POST"])

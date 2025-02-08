@@ -41,7 +41,11 @@ def create_app():
     jwt.init_app(app)
 
     # Register blueprints
-    from app.routes import characters_bp
+    from app.routes import characters_bp, auth_protected_bp
+    from app.auth import auth_bp
+
     app.register_blueprint(characters_bp)
+    app.register_blueprint(auth_bp, url_prefix="/auth")
+    app.register_blueprint(auth_protected_bp, url_prefix="/protected")
 
     return app
