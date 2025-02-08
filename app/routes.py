@@ -6,7 +6,7 @@ That's why I am using this schema to validate incoming data before inserting it 
 
 from flask import Blueprint, request, jsonify
 from app import db
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.models import Character
 from app.schemas import CharacterCreateSchema, CharacterResponseSchema
 from pydantic import ValidationError
@@ -27,32 +27,28 @@ def protected():
     return jsonify(message="You have access to this protected route"), 200
 
 
-@characters_bp.route("/characters", methods=["POST"])
-def create_characters():
+@characters_bp.route('/characters', methods=['POST'])
+@jwt_required()  # This will ensure only authorized users can create characters
+def create_character():
+    """
+    Endpoint to create a new character. This route is protected by JWT authentication.
+    """
+    # Get the user identity from the JWT
+    current_user = get_jwt_identity()  # This will be the data stored in the token
+
+    # Validate incoming data (this can be done with pydantic or any other schema validation method)
+    data = request.get_json()
+    if not data:
+        return jsonify({"message": "No data provided"}), 400
+
+    # Parse and create a new character
     try:
-        # Validate and parse JSON request body
-        data = CharacterCreateSchema(**request.get_json())
-
-        # Create new Character instance
-        character = Character(
-            name=data.name,
-            house=data.house_id,
-            animal=data.animal,
-            symbol=data.symbol,
-            nickname=data.nickname,
-            role=data.role,
-            age=data.age,
-            death=data.death,
-            strength=data.strength_id
-        )
-
-        # Add character to DB
+        character_data = CharacterCreateSchema(**data)
+        character = Character(**character_data.dict())
         db.session.add(character)
         db.session.commit()
 
-        return jsonify(character.to_dict()), 201
-
-    except ValidationError as e:
-        return jsonify({"error": e.errors()}), 400
+        return jsonify({"message": "Character created successfully"}), 201
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        db.session.rollback()
+        return jsonify({"message": f"Error: {str(e)}"}), 400
