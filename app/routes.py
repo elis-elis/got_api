@@ -1,7 +1,7 @@
 """
-Pydantic's validation is just for input data (e.g., when you send data to your API),
-but it doesn't directly interact with your database.
-That's why I am using this schema to validate incoming data before inserting it into the database.
+Pydantic's validation is just for input data (e.g., when sending data to the API),
+but it doesn't directly interact with the database.
+To validate incoming data before inserting it into the database.
 """
 
 from flask import Blueprint, request, jsonify
@@ -13,6 +13,8 @@ from app.models import Character
 from app.schemas import CharacterCreateSchema
 from pydantic import ValidationError
 import random
+from app.filters import get_pagination_params, get_filter_params, apply_filters
+
 
 # Create a Blueprint for character-related routes
 characters_bp = Blueprint("characters", __name__)
@@ -23,27 +25,16 @@ characters_bp = Blueprint("characters", __name__)
 def get_characters():
     """
     Fetch all characters with optional pagination.
-    Query Parameters:
-    - limit: Number of characters to return (default: 20)
-    - skip: Number of characters to skip (default: 0)
     """
     try:
-        limit = request.args.get('limit', type=int, default=20)
-        skip = request.args.get('skip', type=int, default=0)
+        limit, skip = get_pagination_params()
+        filters = get_filter_params()
 
-        if limit <= 0:
-            return jsonify({"message": "Limit must be greater than 0."}), 400
-        if skip < 0:
-            return jsonify({"message": "Skip cannot be negative."}), 400
+        # Apply filters to query
+        query = apply_filters(Character.query, filters)
 
         # Fetch characters from the database with pagination
-        characters_query = Character.query.offset(skip).limit(limit)
-        characters = characters_query.all()
-
-        # If no pagination params, return 20 random characters
-        if "limit" not in request.args and "skip" not in request.args:
-            all_characters = Character.query.all()
-            characters = random.sample(all_characters, min(len(all_characters), 20))
+        characters = query.offset(skip).limit(limit).all()
 
         return jsonify({
             "characters": [char.to_dict() for char in characters],
