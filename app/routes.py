@@ -5,6 +5,8 @@ That's why I am using this schema to validate incoming data before inserting it 
 """
 
 from flask import Blueprint, request, jsonify
+from sqlalchemy.exc import SQLAlchemyError
+
 from app import db
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.models import Character
@@ -30,38 +32,56 @@ def get_characters():
         skip = request.args.get('skip', type=int, default=0)
 
         if limit <= 0:
-            return jsonify({"message": "Limit must be greater than 0."})
+            return jsonify({"message": "Limit must be greater than 0."}), 400
+        if skip < 0:
+            return jsonify({"message": "Skip cannot be negative."}), 400
 
-        # Fetch characters from the database
+        # Fetch characters from the database with pagination
         characters_query = Character.query.offset(skip).limit(limit)
-
         characters = characters_query.all()
 
-        # If no pagination, return 20 random characters
+        # If no pagination params, return 20 random characters
         if "limit" not in request.args and "skip" not in request.args:
             all_characters = Character.query.all()
             characters = random.sample(all_characters, min(len(all_characters), 20))
 
-        # Convert characters to JSON
-        characters_data = []
-        for char in characters:
-            character_info = {
-                "id": char.id,
-                "name": char.name,
-                "house": char.house.name if char.house else None,
-                "animal": char.animal,
-                "symbol": char.symbol,
-                "nickname": char.nickname,
-                "role": char.role,
-                "age": char.age,
-                "death": char.death,
-                "strength": char.strength.description if char.strength else None
-            }
-            characters_data.append(character_info)
+        return jsonify({
+            "characters": [char.to_dict() for char in characters],
+            "count": len(characters)
+        }), 200
 
-        return jsonify({"characters": characters_data, "count": len(characters_data)}), 200
+    except ValueError:
+        return jsonify({"message": "Invalid input. Limit and skip must be integers."}), 400
+
+    except SQLAlchemyError as db_error:
+        return jsonify({"message": f"Database error: {str(db_error)}"}), 500
+
     except Exception as e:
-        return jsonify({"message": f"Error fetching characters: {str(e)}"}), 500
+        return jsonify({"message": f"Unexpected error: {str(e)}"}), 500
+
+
+@characters_bp.route('/characters/<string:character_id>', methods=['GET'])
+@jwt_required(optional=True)
+def get_character(character_id):
+    """
+    Fetch a single character by its unique ID.
+    """
+    try:
+        if not character_id.isdigit():
+            return jsonify({"message": "Invalid character ID format"}), 400
+
+        character = Character.query.get(character_id)
+
+        if not character:
+            return jsonify({"message": "Character not found. but don't give up."}), 404
+
+        return jsonify(character.to_dict()), 200
+
+    except SQLAlchemyError as db_error:
+        return jsonify({"message": f"Database error: {str(db_error)}"}), 500  # Internal Server Error
+
+    except Exception as e:
+        return jsonify({"message": f"Unexpected error: {str(e)}"}), 500  # Catch-all for unknown issues
 
 
 @characters_bp.route('/characters', methods=['POST'])
