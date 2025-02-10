@@ -93,6 +93,15 @@ def apply_filters(query, filters):
     return query
 
 
+def get_sorting_params():
+    """Extract sorting parameters from the request."""
+
+    sort_by = request.args.get('sort_by', type=str, default="name"),
+    sort_order = request.args.get('sort_order', type=str, default="asc")
+
+    return sort_by, sort_order
+
+
 def apply_sorting(query, sort_by, sort_order):
     """
     Apply sorting dynamically based on the user request.

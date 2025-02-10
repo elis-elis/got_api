@@ -13,7 +13,14 @@ from app.models import Character
 from app.schemas import CharacterCreateSchema
 from pydantic import ValidationError
 import random
-from app.filters import get_pagination_params, get_filter_params, apply_filters, apply_sorting
+from app.utils import is_valid_uuid
+from app.filters import (
+    get_pagination_params,
+    get_filter_params,
+    apply_filters,
+    apply_sorting,
+    get_sorting_params
+)
 
 # Create a Blueprint for character-related routes
 characters_bp = Blueprint("characters", __name__)
@@ -34,8 +41,7 @@ def get_characters():
         # Apply filters to query
         query = apply_filters(start_query, filters)
         # Apply sorting
-        sort_by = filters.get("sort_by", "name")  # Default sorting by name
-        sort_order = filters.get("sort_order", "asc")  # Default to ascending
+        sort_by, sort_order = get_sorting_params()
         query = apply_sorting(query, sort_by, sort_order)
 
         # Fetch characters from the database with pagination
@@ -63,7 +69,7 @@ def get_character(character_id):
     Fetch a single character by its unique ID.
     """
     try:
-        if not character_id.isdigit():
+        if not character_id.isdigit() and not is_valid_uuid(character_id):
             return jsonify({"message": "Invalid character ID format"}), 400
 
         character = Character.query.get(character_id)
@@ -102,6 +108,11 @@ def create_character():
         db.session.commit()
 
         return jsonify({"message": "Character created successfully"}), 201
+    except ValidationError as ve:
+        return jsonify({"message": "Validation error", "errors": ve.errors()}), 400
+    except SQLAlchemyError as db_error:
+        db.session.rollback()
+        return jsonify({"message": f"Database error: {str(db_error)}"}), 500
     except Exception as e:
         db.session.rollback()
-        return jsonify({"message": f"Error: {str(e)}"}), 400
+        return jsonify({"message": f"Unexpected error: {str(e)}"}), 500
