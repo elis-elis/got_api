@@ -4,6 +4,8 @@ from flask import request
 from app.models import Character, House, Strength
 from sqlalchemy.orm import joinedload
 
+ALLOWED_SORT_FIELDS = {"name", "age", "house", "role", "nickname", "animal", "symbol", "death", "strength"}
+
 
 def get_pagination_params():
     """
@@ -94,10 +96,16 @@ def apply_filters(query, filters):
 
 
 def get_sorting_params():
-    """Extract sorting parameters from the request."""
+    """Extract and validate sorting parameters from the request arguments."""
 
-    sort_by = request.args.get('sort_by', type=str, default="name"),
-    sort_order = request.args.get('sort_order', type=str, default="asc")
+    sort_by = request.args.get('sort_by', type=str, default="name")
+    sort_order = request.args.get('sort_order', type=str, default="asc").lower()
+
+    if sort_by not in ALLOWED_SORT_FIELDS:
+        sort_by = "name"  # Default if invalid field is given
+
+    if sort_order not in ["asc", "desc"]:
+        sort_order = "asc"
 
     return sort_by, sort_order
 
@@ -106,9 +114,7 @@ def apply_sorting(query, sort_by, sort_order):
     """
     Apply sorting dynamically based on the user request.
     """
-    allowed_sort_fields = ["name", "age", "house", "role", "nickname", "animal", "symbol", "death", "strength"]
-
-    if sort_by not in allowed_sort_fields:
+    if sort_by not in ALLOWED_SORT_FIELDS:
         return query  # If the sorting field is not recognized, return the query unchanged
 
     sort_func = asc if sort_order == "asc" else desc  # Determine sorting order
@@ -138,6 +144,6 @@ def apply_sorting(query, sort_by, sort_order):
         query = query.order_by(sort_func(Character.death))
 
     elif sort_by == "strength":
-        query = query.join(Strength).order_by(sort_func(House.description))
+        query = query.join(Strength).order_by(sort_func(Strength.description))
 
     return query

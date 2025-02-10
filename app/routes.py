@@ -33,16 +33,19 @@ def get_characters():
     Fetch characters with filtering, sorting, and pagination.
     """
     try:
-        limit, skip = get_pagination_params()
         filters = get_filter_params()
 
         start_query = Character.query
 
         # Apply filters to query
         query = apply_filters(start_query, filters)
+
         # Apply sorting
         sort_by, sort_order = get_sorting_params()
         query = apply_sorting(query, sort_by, sort_order)
+
+        # Apply pagination
+        limit, skip = get_pagination_params()
 
         # Fetch characters from the database with pagination
         characters = query.offset(skip).limit(limit).all()
