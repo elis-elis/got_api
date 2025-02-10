@@ -13,8 +13,7 @@ from app.models import Character
 from app.schemas import CharacterCreateSchema
 from pydantic import ValidationError
 import random
-from app.filters import get_pagination_params, get_filter_params, apply_filters
-
+from app.filters import get_pagination_params, get_filter_params, apply_filters, apply_sorting
 
 # Create a Blueprint for character-related routes
 characters_bp = Blueprint("characters", __name__)
@@ -24,14 +23,20 @@ characters_bp = Blueprint("characters", __name__)
 @jwt_required(optional=True)  # Authenticated or non-authenticated users can access
 def get_characters():
     """
-    Fetch all characters with optional pagination.
+    Fetch characters with filtering, sorting, and pagination.
     """
     try:
         limit, skip = get_pagination_params()
         filters = get_filter_params()
 
+        start_query = Character.query
+
         # Apply filters to query
-        query = apply_filters(Character.query, filters)
+        query = apply_filters(start_query, filters)
+        # Apply sorting
+        sort_by = filters.get("sort_by", "name")  # Default sorting by name
+        sort_order = filters.get("sort_order", "asc")  # Default to ascending
+        query = apply_sorting(query, sort_by, sort_order)
 
         # Fetch characters from the database with pagination
         characters = query.offset(skip).limit(limit).all()
