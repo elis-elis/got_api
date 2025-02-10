@@ -3,10 +3,10 @@ Pydantic's validation is just for input data (e.g., when sending data to the API
 but it doesn't directly interact with the database.
 To validate incoming data before inserting it into the database.
 """
-
+import json
+import os
 from flask import Blueprint, request, jsonify
 from sqlalchemy.exc import SQLAlchemyError
-
 from app import db
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.models import Character
@@ -21,6 +21,9 @@ from app.filters import (
     apply_sorting,
     get_sorting_params
 )
+
+# Path to the JSON file where characters are stored
+CHARACTERS_JSON_PATH = os.path.join(os.path.dirname(__file__), 'characters.json')
 
 # Create a Blueprint for character-related routes
 characters_bp = Blueprint("characters", __name__)
@@ -89,14 +92,20 @@ def get_character(character_id):
         return jsonify({"message": f"Unexpected error: {str(e)}"}), 500  # Catch-all for unknown issues
 
 
-@characters_bp.route('/characters', methods=['POST'])
+@characters_bp.route('/character', methods=['POST'])
 @jwt_required()  # This will ensure only authorized users can create characters
 def create_character():
     """
-    Endpoint to create a new character. This route is protected by JWT authentication.
+    Endpoint to create a new character.
+    Check if data is valid (Pydantic schema validation).
+    Load existing characters from the 'characters.json' file.
+    Add the new character to the in-memory list.
+    Save the updated list back to the 'characters.json' file.
+    Return success response.
+    Consideration: The data is lost if the server is restarted. For more permanent storage, switch to a database.
     """
     # Get the user identity from the JWT
-    current_user = get_jwt_identity()  # This will be the data stored in the token
+    current_user = get_jwt_identity()  # for authentication purpose, although not used here directly
 
     # Validate incoming data (this can be done with pydantic or any other schema validation method)
     data = request.get_json()
@@ -104,6 +113,51 @@ def create_character():
         return jsonify({"message": "No data provided"}), 400
 
     # Parse and create a new character
+    try:
+        # Use Pydantic to validate the incoming character data
+        character_data = CharacterCreateSchema(**data)
+
+        # Prepare the new character data for storage
+        new_character = character_data.dict()
+
+        # Read existing characters from the JSON file
+        if os.path.exists(CHARACTERS_JSON_PATH):
+            with open(CHARACTERS_JSON_PATH, 'r') as file:
+                characters = json.load(file)
+        else:
+            characters = []  # If the file doesn't exist, start with an empty list
+
+        # Add the new character to the list
+        new_character["id"] = len(characters) + 1  # Assign a new ID
+        characters.append(new_character)
+
+        # Save the updated list of characters back to the JSON file
+        with open(CHARACTERS_JSON_PATH, 'w') as file:
+            json.dump(characters, file, indent=4)
+
+        return jsonify({"message": "Character created successfully", "character": new_character}), 201
+
+    except ValidationError as ve:
+        # If the data doesn't pass validation, return a detailed error
+        return jsonify({"message": "Validation error", "errors": ve.errors()}), 400
+
+    except Exception as e:
+        return jsonify({"message": f"Unexpected error: {str(e)}"}), 500
+
+
+# This route is designed to save new character(s) in database
+@characters_bp.route('/new_character', methods=['POST'])
+@jwt_required()
+def create_character_for_db():
+    """
+    Endpoint to create a new character and save it to the database.
+    """
+    current_user = get_jwt_identity()
+
+    data = request.get_json()
+    if not data:
+        return jsonify({"message": "No data provided"}), 400
+
     try:
         character_data = CharacterCreateSchema(**data)
         character = Character(**character_data.dict())
