@@ -3,8 +3,6 @@ Pydantic's validation is just for input data (e.g., when sending data to the API
 but it doesn't directly interact with the database.
 To validate incoming data before inserting it into the database.
 """
-import json
-import os
 from flask import Blueprint, request, jsonify
 from sqlalchemy.exc import SQLAlchemyError
 from app import db
@@ -21,9 +19,8 @@ from app.filters import (
     apply_sorting,
     get_sorting_params
 )
+from app.utils import add_character
 
-# Path to the JSON file where characters are stored
-CHARACTERS_JSON_PATH = os.path.join(os.path.dirname(__file__), 'characters.json')
 
 # Create a Blueprint for character-related routes
 characters_bp = Blueprint("characters", __name__)
@@ -96,7 +93,7 @@ def get_character(character_id):
 @jwt_required()  # This will ensure only authorized users can create characters
 def create_character():
     """
-    Endpoint to create a new character.
+    Endpoint to create a new character and store it in 'characters.json'.
     Check if data is valid (Pydantic schema validation).
     Load existing characters from the 'characters.json' file.
     Add the new character to the in-memory list.
@@ -107,35 +104,20 @@ def create_character():
     # Get the user identity from the JWT
     current_user = get_jwt_identity()  # for authentication purpose, although not used here directly
 
-    # Validate incoming data (this can be done with pydantic or any other schema validation method)
+    # Get JSON data from the request
     data = request.get_json()
     if not data:
         return jsonify({"message": "No data provided"}), 400
 
-    # Parse and create a new character
+    # Create a new character
     try:
         # Use Pydantic to validate the incoming character data
         character_data = CharacterCreateSchema(**data)
-
-        # Prepare the new character data for storage
         new_character = character_data.dict()
 
-        # Read existing characters from the JSON file
-        if os.path.exists(CHARACTERS_JSON_PATH):
-            with open(CHARACTERS_JSON_PATH, 'r') as file:
-                characters = json.load(file)
-        else:
-            characters = []  # If the file doesn't exist, start with an empty list
+        saved_character = add_character(new_character)
 
-        # Add the new character to the list
-        new_character["id"] = len(characters) + 1  # Assign a new ID
-        characters.append(new_character)
-
-        # Save the updated list of characters back to the JSON file
-        with open(CHARACTERS_JSON_PATH, 'w') as file:
-            json.dump(characters, file, indent=4)
-
-        return jsonify({"message": "Character created successfully", "character": new_character}), 201
+        return jsonify({"message": "Character created successfully", "character": saved_character}), 201
 
     except ValidationError as ve:
         # If the data doesn't pass validation, return a detailed error
