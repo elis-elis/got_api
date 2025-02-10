@@ -55,7 +55,7 @@ def get_characters():
     }), 200
 
 
-@characters_bp.route('/characters/<id:character_id>', methods=['GET'])
+@characters_bp.route('/characters/<int:character_id>', methods=['GET'])
 @jwt_required(optional=True)
 def get_character(character_id):
     """

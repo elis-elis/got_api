@@ -3,7 +3,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 
 def handle_404(error):
-    return jsonify({"message": "Resource not found."}), 404
+    return jsonify({"message": "This resource was not found. Please check the URL."}), 404
 
 
 def handle_500(error):
