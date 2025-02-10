@@ -610,5 +610,17 @@
         "death": null,
         "strength_id": 3,
         "id": 51
+    },
+    {
+        "name": "unknown character 77",
+        "house_id": 2,
+        "animal": "lizard",
+        "symbol": "star",
+        "nickname": "crooked teeth",
+        "role": "buyer",
+        "age": null,
+        "death": 9,
+        "strength_id": 1,
+        "id": 52
     }
 ]
