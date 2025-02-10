@@ -1,3 +1,4 @@
+from sqlalchemy import asc, desc
 from sqlalchemy.exc import SQLAlchemyError
 from flask import request
 from app.models import Character, House, Strength
@@ -24,23 +25,23 @@ def get_pagination_params():
 
 def get_filter_params():
     """
-    This function collects filter parameters like name, house, role, etc., from the URL query string,
+    This function collects filter parameters from the URL query string,
     and then returns a dictionary of filters that have actual values (i.e., not None).
     This ensures that we only work with filters the user explicitly provided.
     Each of these filters will get assigned a value based on the URL query string.
     If the parameter is not present in the URL, Flask will return None for that filter.
     """
     filters = {
-        "name": request.args.get("name", type=str),
-        "house": request.args.get("house", type=str),
-        "house_id": request.args.get("house_id", type=int),
-        "strength": request.args.get("strength", type=str),
-        "strength_id": request.args.get("strength_id", type=int),
-        "animal": request.args.get("animal", type=str),
-        "role": request.args.get("role", type=str),
-        "age": request.args.get("age", type=int),
-        "age_more_than": request.args.get("age_more_than", type=int),
-        "age_less_than": request.args.get("age_less_than", type=int)
+        "name": request.args.get('name', type=str),
+        "house": request.args.get('house', type=str),
+        "house_id": request.args.get('house_id', type=int),
+        "strength": request.args.get('strength', type=str),
+        "strength_id": request.args.get('strength_id', type=int),
+        "animal": request.args.get('animal', type=str),
+        "role": request.args.get('role', type=str),
+        "age": request.args.get('age', type=int),
+        "age_more_than": request.args.get('age_more_than', type=int),
+        "age_less_than": request.args.get('age_less_than', type=int)
     }
     # Create a new dictionary that only contains the filters with actual values (i.e., value is not None).
     return {key: value for key, value in filters.items() if value is not None}
@@ -88,5 +89,46 @@ def apply_filters(query, filters):
     # Filtering by strength ID (exact match) using a join with the Strength table
     if "strength_id" in filters:
         query = query.filter(Character.strength_id == filters["strength_id"])
+
+    return query
+
+
+def apply_sorting(query, sort_by, sort_order):
+    """
+    Apply sorting dynamically based on the user request.
+    """
+    allowed_sort_fields = ["name", "age", "house", "role", "nickname", "animal", "symbol", "death", "strength"]
+
+    if sort_by not in allowed_sort_fields:
+        return query  # If the sorting field is not recognized, return the query unchanged
+
+    sort_func = asc if sort_order == "asc" else desc  # Determine sorting order
+
+    if sort_by == "name":
+        query = query.order_by(sort_func(Character.name))
+
+    elif sort_by == "age":
+        query = query.order_by(sort_func(Character.age))
+
+    elif sort_by == "house":
+        query = query.join(House).order_by(sort_func(House.name))
+
+    elif sort_by == "role":
+        query = query.order_by(sort_func(Character.role))
+
+    elif sort_by == "nickname":
+        query = query.order_by(sort_func(Character.nickname))
+
+    elif sort_by == "animal":
+        query = query.order_by(sort_func(Character.animal))
+
+    elif sort_by == "symbol":
+        query = query.order_by(sort_func(Character.symbol))
+
+    elif sort_by == "death":
+        query = query.order_by(sort_func(Character.death))
+
+    elif sort_by == "strength":
+        query = query.join(Strength).order_by(sort_func(House.description))
 
     return query
