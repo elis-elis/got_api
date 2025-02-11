@@ -1,8 +1,7 @@
 from sqlalchemy import asc, desc
-from sqlalchemy.exc import SQLAlchemyError
 from flask import request
 from app.models import Character, House, Strength
-from sqlalchemy.orm import joinedload
+
 
 ALLOWED_SORT_FIELDS = {"name", "age", "house", "role", "nickname", "animal", "symbol", "death", "strength"}
 
