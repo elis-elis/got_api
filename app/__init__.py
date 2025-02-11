@@ -16,9 +16,10 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
+from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 from app.config import Config
-from app.error_handlers import handle_404, handle_500, handle_sqlalchemy_error
+from app.error_handlers import handle_404, handle_500, handle_sqlalchemy_error, handle_validation_error
 
 
 # Initialize database / extensions
@@ -53,5 +54,6 @@ def create_app():
     app.register_error_handler(404, handle_404)
     app.register_error_handler(500, handle_500)
     app.register_error_handler(SQLAlchemyError, handle_sqlalchemy_error)
+    app.register_error_handler(ValidationError, handle_validation_error)
 
     return app

@@ -4,14 +4,12 @@ but it doesn't directly interact with the database.
 To validate incoming data before inserting it into the database.
 """
 from flask import Blueprint, request, jsonify
+from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
-from app import db
+from app import db, handle_404, handle_sqlalchemy_error, handle_500, handle_validation_error
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.models import Character
 from app.schemas import CharacterCreateSchema
-from pydantic import ValidationError
-import random
-from app.utils import is_valid_uuid
 from app.filters import (
     get_pagination_params,
     get_filter_params,
@@ -55,20 +53,6 @@ def get_characters():
     }), 200
 
 
-@characters_bp.route('/characters/<int:character_id>', methods=['GET'])
-@jwt_required(optional=True)
-def get_character(character_id):
-    """
-    Fetch a single character by its unique ID.
-    """
-    character = Character.query.get(character_id)
-
-    if not character:
-        return jsonify({"message": "Character not found. but don't give up."}), 404
-
-    return jsonify(character.to_dict()), 200
-
-
 @characters_bp.route('/character', methods=['POST'])
 @jwt_required()  # This will ensure only authorized users can create characters
 def create_character():
@@ -81,22 +65,29 @@ def create_character():
     Return success response.
     Consideration: The data is lost if the server is restarted. For more permanent storage, switch to a database.
     """
-    # Get the user identity from the JWT
-    current_user = get_jwt_identity()  # for authentication purpose, although not used here directly
+    try:
+        # Get the user identity from the JWT
+        current_user = get_jwt_identity()  # for authentication purpose, although not used here directly
 
-    # Get JSON data from the request
-    data = request.get_json()
-    if not data:
-        return jsonify({"message": "No data provided"}), 400
+        # Get JSON data from the request
+        data = request.get_json()
+        if not data:
+            return jsonify({"message": "No data provided"}), 400
 
-    # Create a new character
-    # Use Pydantic to validate the incoming character data
-    character_data = CharacterCreateSchema(**data)
-    new_character = character_data.dict()
+        # Create a new character
+        # Use Pydantic to validate the incoming character data
+        character_data = CharacterCreateSchema(**data)
+        new_character = character_data.dict()
 
-    saved_character = add_character(new_character)
+        saved_character = add_character(new_character)
 
-    return jsonify({"message": "Character created successfully", "character": saved_character}), 201
+        return jsonify({"message": "Character created successfully", "character": saved_character}), 201
+
+    except ValidationError as ve:
+        return handle_validation_error(ve)
+
+    except Exception as e:
+        return handle_500(e)
 
 
 # This route is designed to save new character(s) in database
@@ -106,15 +97,79 @@ def create_character_for_db():
     """
     Endpoint to create a new character and save it to the database.
     """
-    current_user = get_jwt_identity()
+    try:
+        current_user = get_jwt_identity()
+        data = request.get_json()
+        if not data:
+            return jsonify({"message": "No data provided"}), 400
 
-    data = request.get_json()
-    if not data:
-        return jsonify({"message": "No data provided"}), 400
+        # Validate input
+        character_data = CharacterCreateSchema(**data)
+        character = Character(**character_data.dict())
 
-    character_data = CharacterCreateSchema(**data)
-    character = Character(**character_data.dict())
-    db.session.add(character)
-    db.session.commit()
+        db.session.add(character)
+        db.session.commit()
 
-    return jsonify({"message": "Character created successfully"}), 201
+        return jsonify({"message": "Character created successfully"}), 201
+
+    except ValidationError as ve:
+        return handle_validation_error(ve)
+
+    except SQLAlchemyError as db_error:
+        db.session.rollback()
+        return handle_sqlalchemy_error(db_error)
+
+    except Exception as e:
+        db.session.rollback()
+        return handle_500(e)
+
+
+@characters_bp.route('/characters/<int:character_id>', methods=['GET', 'PATCH'])
+@jwt_required(optional=True)
+def handle_character(character_id):
+    """
+    Endpoint handles fetching (GET) and updating (PATCH) a character by ID.
+    Combines the current character’s data with the user’s update request.
+    Ensures partial updates work without overwriting everything.
+    """
+    character = Character.query.get(character_id)
+
+    if not character:
+        return handle_404(None)
+
+    if request.method == 'GET':
+        return jsonify(character.to_dict()), 200
+
+    if request.method == 'PATCH':
+        data = request.get_json()
+        if not data:
+            return jsonify({"message": "No data provided"}), 400
+
+        try:
+            # character.to_dict() → Gets current character data as a dictionary.
+            # data → The new fields from the request (only what the user sends).
+            # {**character.to_dict(), **data} → Combines them (new data replaces old values).
+            # CharacterCreateSchema(**merged_dict) → Validates the merged data using Pydantic.
+            validated_data = CharacterCreateSchema(**{**character.to_dict(), **data})
+
+            # Update character fields dynamically
+            for key, value in data.items():
+                # Loops through data (the user’s input).
+                # Updates each field dynamically in the character object.
+                setattr(character, key, value)
+                # no need for if "nickname" in data: character.nickname = data["nickname"]
+
+            db.session.commit()
+
+            return jsonify({
+                "message": "Volia! Character updated successfully",
+                "character": character.to_dict()
+            }), 200
+
+        except SQLAlchemyError as db_error:
+            db.session.rollback()
+            return handle_sqlalchemy_error(db_error)
+
+        except Exception as e:
+            db.session.rollback()
+            return handle_500(e)
