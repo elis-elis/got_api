@@ -11,7 +11,6 @@ Usage:
     - Extensions like `db` (SQLAlchemy), `migrate` (Flask-Migrate), and `jwt` (JWTManager) are initialized.
     - Blueprints can be registered within the `create_app()` function to modularize routes.
 """
-
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -31,7 +30,7 @@ jwt = JWTManager()
 def create_app():
     """
     This function creates a new Flask application instance, applies configuration settings,
-    initializes extensions (database, migration, JWT authentication), and registers blueprints.
+    initializes extensions (database, migration, JWT authentication), registers blueprints and error handlers.
     """
     app = Flask(__name__)
 

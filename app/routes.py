@@ -124,40 +124,36 @@ def create_character_for_db():
         return handle_500(e)
 
 
-@characters_bp.route('/characters/<int:character_id>', methods=['GET', 'PATCH'])
-@jwt_required(optional=True)
+@characters_bp.route('/characters/<int:character_id>', methods=['GET', 'PATCH', 'DELETE'])
+@jwt_required
 def handle_character(character_id):
     """
-    Endpoint handles fetching (GET) and updating (PATCH) a character by ID.
-    Combines the current character’s data with the user’s update request.
-    Ensures partial updates work without overwriting everything.
+    Handles fetching (GET), updating (PATCH), and deleting (DELETE) a character by ID.
+    - GET: Returns the character details.
+    - PATCH: Partially updates character fields.
+    - DELETE: Removes the character from the database.
     """
     character = Character.query.get(character_id)
-
     if not character:
         return handle_404(None)
 
     if request.method == 'GET':
         return jsonify(character.to_dict()), 200
+    try:
+        if request.method == 'PATCH':
+            data = request.get_json()
+            if not data:
+                return jsonify({"message": "No data provided"}), 400
 
-    if request.method == 'PATCH':
-        data = request.get_json()
-        if not data:
-            return jsonify({"message": "No data provided"}), 400
-
-        try:
-            # character.to_dict() → Gets current character data as a dictionary.
-            # data → The new fields from the request (only what the user sends).
-            # {**character.to_dict(), **data} → Combines them (new data replaces old values).
-            # CharacterCreateSchema(**merged_dict) → Validates the merged data using Pydantic.
-            validated_data = CharacterCreateSchema(**{**character.to_dict(), **data})
+            # Validate and update character fields dynamically using Pydantic schema
+            # {**character.to_dict(), **data} → Combines current character data (dictionary) with what the user sends
+            validated_data = CharacterCreateSchema(**{**character.to_dict(), **data})  # (**merged_dict)
 
             # Update character fields dynamically
             for key, value in data.items():
                 # Loops through data (the user’s input).
                 # Updates each field dynamically in the character object.
-                setattr(character, key, value)
-                # no need for if "nickname" in data: character.nickname = data["nickname"]
+                setattr(character, key, value)  # no need for if "animal" in data: character.animal = data["animal"]
 
             db.session.commit()
 
@@ -166,10 +162,16 @@ def handle_character(character_id):
                 "character": character.to_dict()
             }), 200
 
-        except SQLAlchemyError as db_error:
-            db.session.rollback()
-            return handle_sqlalchemy_error(db_error)
+        elif request.method == 'DELETE':
+            db.session.delete(character)
+            db.session.commit()
 
-        except Exception as e:
-            db.session.rollback()
-            return handle_500(e)
+            return jsonify({"message": "No problem here: Character deleted successfully."}), 200
+
+    except SQLAlchemyError as db_error:
+        db.session.rollback()
+        return handle_sqlalchemy_error(db_error)
+
+    except Exception as e:
+        db.session.rollback()
+        return handle_500(e)
