@@ -1,5 +1,5 @@
 from sqlalchemy import asc, desc
-from flask import request
+from flask import request, jsonify
 from app.models import Character, House, Strength
 
 
@@ -26,24 +26,27 @@ def get_pagination_params():
 
 def get_filter_params():
     """
-    This function collects filter parameters from the URL query string,
-    and then returns a dictionary of filters that have actual values (i.e., not None).
-    This ensures that we only work with filters the user explicitly provided.
-    Each of these filters will get assigned a value based on the URL query string.
-    If the parameter is not present in the URL, Flask will return None for that filter.
+    Collects filter parameters from the URL query string, ensuring proper type validation.
+    Returns a dictionary of valid filters, ignoring invalid inputs.
     """
     filters = {
         "name": request.args.get('name', type=str),
         "house": request.args.get('house', type=str),
-        "house_id": request.args.get('house_id', type=int),
         "strength": request.args.get('strength', type=str),
-        "strength_id": request.args.get('strength_id', type=int),
         "animal": request.args.get('animal', type=str),
-        "role": request.args.get('role', type=str),
-        "age": request.args.get('age', type=int),
-        "age_more_than": request.args.get('age_more_than', type=int),
-        "age_less_than": request.args.get('age_less_than', type=int)
+        "role": request.args.get('role', type=str)
     }
+
+    # Validate integer filters
+    int_fields = ["age", "age_more_than", "age_less_than", "strength_id", "house_id"]
+
+    for field in int_fields:
+        value = request.args.get(field)
+        if value is not None:
+            if not value.isdigit():  # faster check, .isdigit() ensures only numbers are accepted before conversion
+                raise ValueError({f"Uff. Invalid value for {field}. Must be a number."})
+            filters[field] = int(value)
+
     # Create a new dictionary that only contains the filters with actual values (i.e., value is not None).
     return {key: value for key, value in filters.items() if value is not None}
 

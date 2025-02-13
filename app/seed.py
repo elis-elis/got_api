@@ -1,7 +1,3 @@
-"""
-Database Seeding Script
-"""
-
 import json
 from app import db, create_app
 from app.models import Character, House, Strength
@@ -67,7 +63,7 @@ def seed_database():
                 db.session.add(character)
 
         db.session.commit()
-        print("Database successfully added!")
+        print("Lovely! Database successfully added!")
 
 
 if __name__ == "__main__":

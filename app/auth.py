@@ -97,4 +97,4 @@ def protected():
     except NoAuthorizationError:
         return jsonify({"message": "Oh no! Missing or invalid token."}), 401
     except Exception as e:
-        return jsonify({"message": "An unexpected error occurred. But don'T worry!", "error": str(e)}), 500
+        return jsonify({"message": "An unexpected error occurred. But don't worry!", "error": str(e)}), 500

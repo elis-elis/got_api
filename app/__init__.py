@@ -4,12 +4,6 @@ This file is responsible for:
 - Setting up the SQLAlchemy database connection.
 - Enabling database migrations using Flask-Migrate.
 - Configuring JWT authentication for secure API access.
-
-Usage:
-    - The `create_app()` function is called to initialize the Flask app.
-    - The app is configured using the settings in `app.config.Config`.
-    - Extensions like `db` (SQLAlchemy), `migrate` (Flask-Migrate), and `jwt` (JWTManager) are initialized.
-    - Blueprints can be registered within the `create_app()` function to modularize routes.
 """
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy

@@ -26,31 +26,42 @@ characters_bp = Blueprint("characters", __name__)
 
 @characters_bp.route('/characters/list', methods=['GET'])
 @jwt_required(optional=True)  # Authenticated or non-authenticated users can access
-def get_characters():
+def list_characters():
     """
     Fetch characters with filtering, sorting, and pagination.
+    Returns both count (paginated result) & total (unpaginated count).
     """
-    filters = get_filter_params()
+    try:
+        filters = get_filter_params()
+        start_query = Character.query
 
-    start_query = Character.query
+        # Apply filters dynamically to query
+        query = apply_filters(start_query, filters)
 
-    # Apply filters to query
-    query = apply_filters(start_query, filters)
+        # Get total count *before* pagination
+        total_count = query.count()
 
-    # Apply sorting
-    sort_by, sort_order = get_sorting_params()
-    query = apply_sorting(query, sort_by, sort_order)
+        # Apply sorting
+        sort_by, sort_order = get_sorting_params()
+        query = apply_sorting(query, sort_by, sort_order)
 
-    # Apply pagination
-    limit, skip = get_pagination_params()
+        # Apply pagination
+        limit, skip = get_pagination_params()
 
-    # Fetch characters from the database with pagination
-    characters = query.offset(skip).limit(limit).all()
+        # Fetch characters from the database with pagination
+        characters = query.offset(skip).limit(limit).all()
 
-    return jsonify({
-        "characters": [char.to_dict() for char in characters],
-        "count": len(characters)
-    }), 200
+        return jsonify({
+            "characters": [character.to_dict() for character in characters],
+            "count": len(characters),  # Number of characters returned after pagination
+            "total": total_count  # Total number of characters before pagination
+        }), 200
+
+    except ValidationError as ve:
+        return handle_validation_error(ve)
+
+    except Exception as e:
+        return handle_500(e)
 
 
 @characters_bp.route('/character', methods=['POST'])
@@ -125,7 +136,7 @@ def create_character_for_db():
 
 
 @characters_bp.route('/characters/<int:character_id>', methods=['GET', 'PATCH', 'DELETE'])
-@jwt_required
+@jwt_required()
 def handle_character(character_id):
     """
     Handles fetching (GET), updating (PATCH), and deleting (DELETE) a character by ID.
