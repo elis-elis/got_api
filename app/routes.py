@@ -60,6 +60,9 @@ def list_characters():
     except ValidationError as ve:
         return handle_validation_error(ve)
 
+    except ValueError as e:
+        return jsonify({"message": str(e)}), 400
+
     except Exception as e:
         return handle_500(e)
 

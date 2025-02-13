@@ -44,7 +44,7 @@ def get_filter_params():
         value = request.args.get(field)
         if value is not None:
             if not value.isdigit():  # faster check, .isdigit() ensures only numbers are accepted before conversion
-                raise ValueError({f"Uff. Invalid value for {field}. Must be a number."})
+                raise ValueError(f"Uff. Invalid value for {field}. Must be a number.")
             filters[field] = int(value)
 
     # Create a new dictionary that only contains the filters with actual values (i.e., value is not None).
