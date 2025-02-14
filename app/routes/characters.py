@@ -16,10 +16,11 @@ from app import (
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.models.character_model import Character
 from app.schemas.character_schema import CharacterCreateSchema
-from app.utils.filters import get_filter_params, apply_filters
+from app.services.character_service import list_characters
+from app.utils.filters import get_filter_params
 from app.utils.pagination import get_pagination_params
 from app.utils.utils import add_character
-from app.utils.sorting import apply_sorting, get_sorting_params
+from app.utils.sorting import get_sorting_params
 
 
 # Create a Blueprint for character-related routes
@@ -28,39 +29,25 @@ characters_bp = Blueprint("characters", __name__)
 
 @characters_bp.route('/characters/list', methods=['GET'])
 @jwt_required(optional=True)  # Authenticated or non-authenticated users can access
-def list_characters():
+def get_character_list():
     """
     Fetch characters with filtering, sorting, and pagination.
-    Returns both count (paginated result) & total (unpaginated count).
     """
     try:
         filters = get_filter_params()
-        start_query = Character.query
-
-        # Apply filters dynamically to query
-        query = apply_filters(start_query, filters)
-
-        # Get total count *before* pagination
-        total_count = query.count()
 
         # Apply sorting
         sort_by, sort_order = get_sorting_params()
-        query = apply_sorting(query, sort_by, sort_order)
 
         # Apply pagination
         limit, skip = get_pagination_params()
 
-        # Fetch characters from the database with pagination
-        characters = query.offset(skip).limit(limit).all()
+        result = list_characters(filters, sort_by, sort_order, limit, skip)
 
-        return jsonify({
-            "characters": [character.to_dict() for character in characters],
-            "count": len(characters),  # Number of characters returned after pagination
-            "total": total_count  # Total number of characters before pagination
-        }), 200
+        if "error" in result:
+            return jsonify({"message": result["error"]}), 500
 
-    except ValidationError as ve:
-        return handle_validation_error(ve)
+        return jsonify(result), 200
 
     except ValueError as e:
         return jsonify({"message": str(e)}), 400
@@ -126,7 +113,7 @@ def create_character_for_db():
         db.session.add(character)
         db.session.commit()
 
-        return jsonify({"message": "Character created successfully"}), 201
+        return jsonify({"message": "Character created successfully", "character": character.to_dict()}), 201
 
     except ValidationError as ve:
         return handle_validation_error(ve)
@@ -151,7 +138,7 @@ def handle_character(character_id):
     """
     character = Character.query.get(character_id)
     if not character:
-        return handle_404(None)
+        return handle_404("Character not found")
 
     if request.method == 'GET':
         return jsonify(character.to_dict()), 200
@@ -163,10 +150,11 @@ def handle_character(character_id):
 
             # Validate and update character fields dynamically using Pydantic schema
             # {**character.to_dict(), **data} → Combines current character data (dictionary) with what the user sends
-            validated_data = CharacterCreateSchema(**{**character.to_dict(), **data})  # (**merged_dict)
+            # .dict(exclude_unset=True → only update provided fields
+            validated_data = CharacterCreateSchema(**{**character.to_dict(), **data}).dict(exclude_unset=True)
 
             # Update character fields dynamically
-            for key, value in data.items():
+            for key, value in validated_data.items():
                 # Loops through data (the user’s input).
                 # Updates each field dynamically in the character object.
                 setattr(character, key, value)  # no need for if "animal" in data: character.animal = data["animal"]
@@ -174,7 +162,7 @@ def handle_character(character_id):
             db.session.commit()
 
             return jsonify({
-                "message": "Volia! Character updated successfully",
+                "message": "Voilà! Character updated successfully",
                 "character": character.to_dict()
             }), 200
 
@@ -182,7 +170,10 @@ def handle_character(character_id):
             db.session.delete(character)
             db.session.commit()
 
-            return jsonify({"message": "No problem here: Character deleted successfully."}), 200
+            return jsonify({"message": "Character deleted successfully."}), 200
+
+    except ValidationError as ve:
+        return handle_validation_error(ve)
 
     except SQLAlchemyError as db_error:
         db.session.rollback()
