@@ -1,10 +1,9 @@
-from models.character import Character
-from utils.filter import apply_filters
-from utils.sorting import apply_sorting
-from utils.pagination import get_pagination_params
+from app.models.character_model import Character
+from app.utils.filters import apply_filters
+from app.utils.sorting import apply_sorting
+from app.utils.pagination import get_pagination_params
 from sqlalchemy.exc import SQLAlchemyError
 from flask import jsonify
-
 from app import handle_sqlalchemy_error
 
 

@@ -6,18 +6,20 @@ To validate incoming data before inserting it into the database.
 from flask import Blueprint, request, jsonify
 from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
-from app import db, handle_404, handle_sqlalchemy_error, handle_500, handle_validation_error
+from app import (
+    db,
+    handle_404,
+    handle_sqlalchemy_error,
+    handle_500,
+    handle_validation_error
+)
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.models.character_model import Character
 from app.schemas.character_schema import CharacterCreateSchema
-from app.utils.filters import (
-    get_pagination_params,
-    get_filter_params,
-    apply_filters,
-    apply_sorting,
-    get_sorting_params
-)
+from app.utils.filters import get_filter_params, apply_filters
+from app.utils.pagination import get_pagination_params
 from app.utils.utils import add_character
+from app.utils.sorting import apply_sorting, get_sorting_params
 
 
 # Create a Blueprint for character-related routes
