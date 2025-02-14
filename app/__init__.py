@@ -12,12 +12,17 @@ from flask_jwt_extended import JWTManager
 from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 from app.config import Config
-from app.utils.error_handlers import handle_404, handle_500, handle_sqlalchemy_error, handle_validation_error
+from app.utils.error_handlers import (
+    handle_404,
+    handle_500,
+    handle_sqlalchemy_error,
+    handle_validation_error
+)
 
 
 # Initialize database / extensions
 db = SQLAlchemy()
-migrate = Migrate()
+migrate = Migrate(compare_type=True)  # Ensures column type changes are detected during flask db migrate
 jwt = JWTManager()
 
 
@@ -36,7 +41,7 @@ def create_app():
     migrate.init_app(app, db)
     jwt.init_app(app)
 
-    # Register blueprints
+    # Register blueprints (import inside function to prevent circular imports)
     from app.routes.characters import characters_bp
     from app.routes.auth import auth_bp
 
@@ -48,5 +53,9 @@ def create_app():
     app.register_error_handler(500, handle_500)
     app.register_error_handler(SQLAlchemyError, handle_sqlalchemy_error)
     app.register_error_handler(ValidationError, handle_validation_error)
+
+    # Ensure DB tables exist (only useful in dev mode)
+    with app.app_context():
+        db.create_all()  # Safe to run, does nothing if migrations exist
 
     return app
