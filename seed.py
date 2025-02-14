@@ -1,16 +1,21 @@
+import os
 import json
 from app import db, create_app
-from app.models import Character, House, Strength
+from app.models.character_model import Character, House, Strength
 
 
 # Initialize the app and database
 app = create_app()
 
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Get current directory (data/)
+DATA_FILE = os.path.join(BASE_DIR, "data", "characters.json")  # Construct path
+
+
 def seed_database():
     """
     This function:
-    - Loads character data from `app/characters.json`
+    - Loads character data from `data/characters.json`
     - Ensures that duplicate records are not inserted
     - Adds new characters to the database
     - Commits the transaction
@@ -19,7 +24,7 @@ def seed_database():
     """
     with app.app_context():
         try:
-            with open("app/characters.json", "r") as file:
+            with open(DATA_FILE, "r") as file:
                 characters = json.load(file)
         except (FileNotFoundError, json.JSONDecodeError) as e:
             print(f"Error loading character data: {e}")
@@ -61,9 +66,12 @@ def seed_database():
                     strength=strength
                 )
                 db.session.add(character)
-
-        db.session.commit()
-        print("Lovely! Database successfully added!")
+        try:
+            db.session.commit()
+            print("Lovely! Database successfully added!")
+        except Exception as e:
+            db.session.rollback()  # Roll back any partial inserts
+            print(f"Database error: {e}")
 
 
 if __name__ == "__main__":

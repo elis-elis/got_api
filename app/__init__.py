@@ -12,7 +12,7 @@ from flask_jwt_extended import JWTManager
 from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 from app.config import Config
-from app.error_handlers import handle_404, handle_500, handle_sqlalchemy_error, handle_validation_error
+from app.utils.error_handlers import handle_404, handle_500, handle_sqlalchemy_error, handle_validation_error
 
 
 # Initialize database / extensions
@@ -37,8 +37,8 @@ def create_app():
     jwt.init_app(app)
 
     # Register blueprints
-    from app.routes import characters_bp
-    from app.auth import auth_bp
+    from app.routes.characters import characters_bp
+    from app.routes.auth import auth_bp
 
     app.register_blueprint(characters_bp)
     app.register_blueprint(auth_bp, url_prefix="/auth")

@@ -1,6 +1,6 @@
 from sqlalchemy import asc, desc
-from flask import request, jsonify
-from app.models import Character, House, Strength
+from flask import request
+from app.models.character_model import Character, House, Strength
 
 
 ALLOWED_SORT_FIELDS = {"name", "age", "house", "role", "nickname", "animal", "symbol", "death", "strength"}

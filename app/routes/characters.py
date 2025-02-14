@@ -8,16 +8,16 @@ from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 from app import db, handle_404, handle_sqlalchemy_error, handle_500, handle_validation_error
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app.models import Character
-from app.schemas import CharacterCreateSchema
-from app.filters import (
+from app.models.character_model import Character
+from app.schemas.character_schema import CharacterCreateSchema
+from app.utils.filters import (
     get_pagination_params,
     get_filter_params,
     apply_filters,
     apply_sorting,
     get_sorting_params
 )
-from app.utils import add_character
+from app.utils.utils import add_character
 
 
 # Create a Blueprint for character-related routes
