@@ -19,7 +19,7 @@ from app.schemas.character_schema import CharacterCreateSchema
 from app.services.character_service import list_characters
 from app.utils.filters import get_filter_params
 from app.utils.pagination import get_pagination_params
-from app.utils.utils import add_character
+from app.utils.utils import add_character, load_characters, save_characters
 from app.utils.sorting import get_sorting_params
 
 
@@ -56,7 +56,7 @@ def get_character_list():
         return handle_500(e)
 
 
-@characters_bp.route('/character', methods=['POST'])
+@characters_bp.route('/character/json', methods=['POST'])
 @jwt_required()  # This will ensure only authorized users can create characters
 def create_character():
     """
@@ -93,8 +93,61 @@ def create_character():
         return handle_500(e)
 
 
+@characters_bp.route('/characters/json/<int:character_id>', methods=['GET', 'PATCH', 'DELETE'])
+@jwt_required()
+def handle_character_json(character_id):
+    """
+    Handles fetching (GET), updating (PATCH), and deleting (DELETE) a character by ID in the JSON file.
+    """
+    characters = load_characters()
+
+    character = None
+    for char in characters:
+        if char["id"] == character_id:
+            character = char
+            break
+
+    if not character:
+        return jsonify({"message": "Character not found"}), 404
+
+    try:
+        if request.method == 'GET':
+            return jsonify(character), 200
+
+        if request.method == 'PATCH':
+            data = request.get_json()
+            if not data:
+                return jsonify({"message": "No data provided"}), 400
+
+            # Validate and update character fields dynamically using Pydantic schema
+            validated_data = CharacterCreateSchema(**{**character, **data}).dict(exclude_unset=True)
+
+            # Update the character in the list
+            for key, value in validated_data.items():
+                character[key] = value
+
+            save_characters(characters)  # Save updated characters back to the JSON file
+
+            return jsonify({
+                "message": "Voilà! Character updated successfully",
+                "character": character
+            }), 200
+
+        elif request.method == 'DELETE':
+        characters = [char for char in characters if char["id"] != character_id]
+        save_characters(characters)  # Save the updated list without the deleted character
+
+        return jsonify({"message": "Character deleted successfully from JSON."}), 200
+
+    except ValidationError as ve:
+        return handle_validation_error(ve)
+
+    except Exception as e:
+        return handle_500(e)
+
+
 # This route is designed to save new character(s) in database
-@characters_bp.route('/new_character', methods=['POST'])
+@characters_bp.route('/character', methods=['POST'])
 @jwt_required()
 def create_character_for_db():
     """
@@ -129,7 +182,7 @@ def create_character_for_db():
 
 @characters_bp.route('/characters/<int:character_id>', methods=['GET', 'PATCH', 'DELETE'])
 @jwt_required()
-def handle_character(character_id):
+def handle_character_db(character_id):
     """
     Handles fetching (GET), updating (PATCH), and deleting (DELETE) a character by ID.
     - GET: Returns the character details.

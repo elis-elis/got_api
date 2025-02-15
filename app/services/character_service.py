@@ -1,9 +1,7 @@
 from app.models.character_model import Character
 from app.utils.filters import apply_filters
 from app.utils.sorting import apply_sorting
-from app.utils.pagination import get_pagination_params
 from sqlalchemy.exc import SQLAlchemyError
-from flask import jsonify
 from app import handle_sqlalchemy_error
 
 
@@ -27,11 +25,11 @@ def list_characters(filters, sort_by, sort_order, limit, skip):
         # Fetch characters from the database with pagination
         characters = query.offset(skip).limit(limit).all()
 
-        return jsonify({
-                    "characters": [character.to_dict() for character in characters],
-                    "count": len(characters),  # Number of characters returned after pagination
-                    "total": total_count  # Total number of characters before pagination
-                }), 200
+        return {
+                "characters": [character.to_dict() for character in characters],
+                "count": len(characters),  # Number of characters returned after pagination
+                "total": total_count  # Total number of characters before pagination
+                }
 
     except SQLAlchemyError as db_error:
         return handle_sqlalchemy_error(db_error)
