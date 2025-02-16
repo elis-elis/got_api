@@ -5,6 +5,7 @@ This file is responsible for:
 - Enabling database migrations using Flask-Migrate.
 - Configuring JWT authentication for secure API access.
 """
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -28,8 +29,13 @@ jwt = JWTManager()
 
 def create_app():
     """
-    This function creates a new Flask application instance, applies configuration settings,
-    initializes extensions (database, migration, JWT authentication), registers blueprints and error handlers.
+    Creates a new Flask application instance.
+
+    This function:
+    - Loads configuration settings from `Config`
+    - Initializes Flask extensions (DB, Migrations, JWT)
+    - Registers API blueprints (character routes, authentication)
+    - Configures error handling
     """
     app = Flask(__name__)
 
@@ -42,15 +48,13 @@ def create_app():
     jwt.init_app(app)
 
     # Register blueprints (import inside function to prevent circular imports)
-    from app.routes.characters_json_routes import characters_bp
-    from app.routes.characters_json_routes import characters_json_bp
     from app.routes.characters_db_routes import characters_db_bp
+    from app.routes.characters_json_routes import characters_json_bp
     from app.routes.auth import auth_bp
 
-    app.register_blueprint(characters_bp)
-    app.register_blueprint(auth_bp, url_prefix="/auth")
-    app.register_blueprint(characters_json_bp)
     app.register_blueprint(characters_db_bp)
+    app.register_blueprint(characters_json_bp)
+    app.register_blueprint(auth_bp, url_prefix="/auth")
 
     # Register Error Handlers
     app.register_error_handler(404, handle_404)
@@ -60,6 +64,9 @@ def create_app():
 
     # Ensure DB tables exist (only useful in dev mode)
     with app.app_context():
-        db.create_all()  # Safe to run, does nothing if migrations exist
+        try:
+            db.create_all()  # ❗ Only safe for local dev; remove in production
+        except Exception as e:
+            print(f"Database initialization failed: {e}")
 
     return app

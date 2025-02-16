@@ -4,12 +4,12 @@ from sqlalchemy.exc import SQLAlchemyError
 from pydantic import ValidationError
 from app import db, handle_404, handle_sqlalchemy_error, handle_500, handle_validation_error
 from app.models.character_model import Character
-from app.routes.characters_json_routes import characters_bp
 from app.schemas.character_schema import CharacterCreateSchema
 from app.services.character_db_service import list_characters
 from app.utils.filters import get_filter_params
 from app.utils.pagination import get_pagination_params
 from app.utils.sorting import get_sorting_params
+
 
 characters_db_bp = Blueprint("characters_db", __name__)
 
