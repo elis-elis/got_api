@@ -1,33 +1,20 @@
-"""
-Pydantic's validation is just for input data (e.g., when sending data to the API),
-but it doesn't directly interact with the database.
-To validate incoming data before inserting it into the database.
-"""
 from flask import Blueprint, request, jsonify
-from pydantic import ValidationError
-from sqlalchemy.exc import SQLAlchemyError
-from app import (
-    db,
-    handle_404,
-    handle_sqlalchemy_error,
-    handle_500,
-    handle_validation_error
-)
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from sqlalchemy.exc import SQLAlchemyError
+from pydantic import ValidationError
+from app import db, handle_404, handle_sqlalchemy_error, handle_500, handle_validation_error
 from app.models.character_model import Character
+from app.routes.characters_json_routes import characters_bp
 from app.schemas.character_schema import CharacterCreateSchema
-from app.services.character_service import list_characters
+from app.services.character_db_service import list_characters
 from app.utils.filters import get_filter_params
 from app.utils.pagination import get_pagination_params
-from app.utils.utils import add_character, load_characters, save_characters, save_and_respond
 from app.utils.sorting import get_sorting_params
 
-
-# Create a Blueprint for character-related routes
-characters_bp = Blueprint("characters", __name__)
+characters_db_bp = Blueprint("characters_db", __name__)
 
 
-@characters_bp.route('/characters/list', methods=['GET'])
+@characters_db_bp.route('/characters/list', methods=['GET'])
 @jwt_required(optional=True)  # Authenticated or non-authenticated users can access
 def get_character_list():
     """
@@ -56,94 +43,7 @@ def get_character_list():
         return handle_500(e)
 
 
-@characters_bp.route('/character/json', methods=['POST'])
-@jwt_required()  # This will ensure only authorized users can create characters
-def create_character():
-    """
-    Endpoint to create a new character and store it in 'characters.json'.
-    Check if data is valid (Pydantic schema validation).
-    Load existing characters from the 'characters.json' file.
-    Add the new character to the in-memory list.
-    Save the updated list back to the 'characters.json' file.
-    Return success response.
-    Consideration: The data is lost if the server is restarted. For more permanent storage, switch to a database.
-    """
-    try:
-        # Get the user identity from the JWT
-        current_user = get_jwt_identity()  # for authentication purpose, although not used here directly
-
-        # Get JSON data from the request
-        data = request.get_json()
-        if not data:
-            return jsonify({"message": "No data provided"}), 400
-
-        # Create a new character
-        # Use Pydantic to validate the incoming character data
-        character_data = CharacterCreateSchema(**data)
-        new_character = character_data.dict()
-
-        saved_character = add_character(new_character)
-
-        return jsonify({"message": "Character created successfully", "character": saved_character}), 201
-
-    except ValidationError as ve:
-        return handle_validation_error(ve)
-
-    except Exception as e:
-        return handle_500(e)
-
-
-@characters_bp.route('/characters/json/<int:character_id>', methods=['GET', 'PATCH', 'DELETE'])
-@jwt_required()
-def handle_character_json(character_id):
-    """
-    Handles fetching (GET), updating (PATCH), and deleting (DELETE) a character by ID in the JSON file.
-    """
-    characters = load_characters()
-
-    # character = next((char for char in characters if char["id"] == character_id), None)
-    character = None
-    for char in characters:
-        if char["id"] == character_id:
-            character = char
-            break
-
-    if not character:
-        return jsonify({"message": "Character not found"}), 404
-
-    try:
-        if request.method == 'GET':
-            return jsonify(character), 200
-
-        if request.method == 'PATCH':
-            data = request.get_json()
-            if not data:
-                return jsonify({"message": "No data provided"}), 400
-
-            # Validate and update character fields dynamically using Pydantic schema
-            validated_data = CharacterCreateSchema(**{**character, **data}).dict(exclude_unset=True)
-
-            # Update the character in the list
-            for key, value in validated_data.items():
-                character[key] = value
-
-            return save_and_respond("Voilà! Character updated successfully", characters, character)
-
-        elif request.method == 'DELETE':
-            # Creates a new list excluding the character with character_id
-            characters = [char for char in characters if char["id"] != character_id]
-
-            return save_and_respond("Character deleted successfully from JSON.", characters)
-
-    except ValidationError as ve:
-        return handle_validation_error(ve)
-
-    except Exception as e:
-        return handle_500(e)
-
-
-# This route is designed to save new character(s) in database
-@characters_bp.route('/character', methods=['POST'])
+@characters_db_bp.route('/character', methods=['POST'])
 @jwt_required()
 def create_character_for_db():
     """
@@ -176,7 +76,7 @@ def create_character_for_db():
         return handle_500(e)
 
 
-@characters_bp.route('/characters/<int:character_id>', methods=['GET', 'PATCH', 'DELETE'])
+@characters_db_bp.route('/characters/<int:character_id>', methods=['GET', 'PATCH', 'DELETE'])
 @jwt_required()
 def handle_character_db(character_id):
     """

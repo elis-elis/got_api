@@ -42,11 +42,15 @@ def create_app():
     jwt.init_app(app)
 
     # Register blueprints (import inside function to prevent circular imports)
-    from app.routes.characters import characters_bp
+    from app.routes.characters_json_routes import characters_bp
+    from app.routes.characters_json_routes import characters_json_bp
+    from app.routes.characters_db_routes import characters_db_bp
     from app.routes.auth import auth_bp
 
     app.register_blueprint(characters_bp)
     app.register_blueprint(auth_bp, url_prefix="/auth")
+    app.register_blueprint(characters_json_bp)
+    app.register_blueprint(characters_db_bp)
 
     # Register Error Handlers
     app.register_error_handler(404, handle_404)

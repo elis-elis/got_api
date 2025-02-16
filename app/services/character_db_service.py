@@ -2,7 +2,7 @@ from app.models.character_model import Character
 from app.utils.filters import apply_filters
 from app.utils.sorting import apply_sorting
 from sqlalchemy.exc import SQLAlchemyError
-from app import handle_sqlalchemy_error
+from app import handle_sqlalchemy_error, db
 
 
 def list_characters(filters, sort_by, sort_order, limit, skip):
@@ -33,3 +33,23 @@ def list_characters(filters, sort_by, sort_order, limit, skip):
 
     except SQLAlchemyError as db_error:
         return handle_sqlalchemy_error(db_error)
+
+
+def create_character_db(character_data):
+    """
+    Creates a new character in the database.
+    """
+    character = Character(**character_data.dict())
+    db.session.add(character)
+    db.session.commit()
+    return character.to_dict()
+
+
+def update_character_db(character, validated_data):
+    """
+    Updates a character in the database.
+    """
+    for key, value in validated_data.items():
+        setattr(character, key, value)
+    db.session.commit()
+    return character.to_dict()

@@ -22,6 +22,8 @@ class StrengthResponseSchema(BaseModel):
 
 class CharacterCreateSchema(BaseModel):
     name: str = Field(..., max_length=100)
+    house: Optional[str]
+    house: Optional[str]
     house_id: Optional[int] = None  # Reference to House ID (nullable)
     animal: Optional[str] = Field(None, max_length=50)
     symbol: Optional[str] = Field(None, max_length=50)
@@ -29,6 +31,7 @@ class CharacterCreateSchema(BaseModel):
     role: str = Field(..., max_length=100)
     age: Optional[int] = Field(None, ge=0)  # Age must be >= 0, can be null
     death: Optional[int] = Field(None, ge=0)  # Death (year) must be >= 0
+    strength: Optional[str]
     strength_id: int = Field(..., ge=1)  # Reference to Strength ID
 
 
@@ -44,3 +47,16 @@ class CharacterResponseSchema(BaseModel):
     age: Optional[int] = None
     death: Optional[int] = None
     strength: StrengthResponseSchema
+
+
+class CharacterJSONSchema(BaseModel):
+    id: Optional[int]
+    name: str
+    house: Optional[str]
+    animal: Optional[str]
+    symbol: Optional[str]
+    nickname: Optional[str]
+    role: Optional[str]
+    age: Optional[int]
+    death: Optional[int]
+    strength: Optional[str]
