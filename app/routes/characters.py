@@ -19,7 +19,7 @@ from app.schemas.character_schema import CharacterCreateSchema
 from app.services.character_service import list_characters
 from app.utils.filters import get_filter_params
 from app.utils.pagination import get_pagination_params
-from app.utils.utils import add_character, load_characters, save_characters
+from app.utils.utils import add_character, load_characters, save_characters, save_and_respond
 from app.utils.sorting import get_sorting_params
 
 
@@ -101,6 +101,7 @@ def handle_character_json(character_id):
     """
     characters = load_characters()
 
+    # character = next((char for char in characters if char["id"] == character_id), None)
     character = None
     for char in characters:
         if char["id"] == character_id:
@@ -126,18 +127,13 @@ def handle_character_json(character_id):
             for key, value in validated_data.items():
                 character[key] = value
 
-            save_characters(characters)  # Save updated characters back to the JSON file
-
-            return jsonify({
-                "message": "Voilà! Character updated successfully",
-                "character": character
-            }), 200
+            return save_and_respond("Voilà! Character updated successfully", characters, character)
 
         elif request.method == 'DELETE':
-        characters = [char for char in characters if char["id"] != character_id]
-        save_characters(characters)  # Save the updated list without the deleted character
+            # Creates a new list excluding the character with character_id
+            characters = [char for char in characters if char["id"] != character_id]
 
-        return jsonify({"message": "Character deleted successfully from JSON."}), 200
+            return save_and_respond("Character deleted successfully from JSON.", characters)
 
     except ValidationError as ve:
         return handle_validation_error(ve)
