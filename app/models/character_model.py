@@ -6,6 +6,10 @@ from app import db
 
 
 class House(db.Model):
+    """
+    Represents a house in the database. Each house has a unique name.
+    Characters can belong to a house.
+    """
     __tablename__ = "houses"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -49,18 +53,20 @@ class Character(db.Model):
     def to_dict(self):
         """
         Convert the Character object to a dictionary, including related models.
+        Directly accesses self.house.id, which can raise an AttributeError if house is None.
+        Instead of "house": None, it's better to return an empty dictionary {}.
         """
         return {
             "id": self.id,
             "name": self.name,
-            "house": {"id": self.house.id, "name": self.house.name} if self.house else None,
+            "house": {"id": self.house.id, "name": self.house.name} if self.house else {},
             "animal": self.animal,
             "symbol": self.symbol,
             "nickname": self.nickname,
             "role": self.role,
             "age": self.age,
             "death": self.death,
-            "strength": {"id": self.strength.id, "description": self.strength.description},
+            "strength": {"id": self.strength.id, "description": self.strength.description} if self.strength else {},
         }
 
     def __repr__(self):
