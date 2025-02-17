@@ -574,5 +574,17 @@
         "death": 17,
         "strength": "Physically strong",
         "id": 51
+    },
+    {
+        "name": "Lala",
+        "house": "Stark",
+        "animal": "something very little",
+        "symbol": "worry mama",
+        "nickname": "No yes maybe",
+        "role": "Assassin",
+        "age": 33334,
+        "death": null,
+        "strength": "Cunning",
+        "id": 52
     }
 ]

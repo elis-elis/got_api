@@ -3,12 +3,43 @@ from pydantic import ValidationError
 from app import handle_500, handle_validation_error
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.schemas.character_schema import CharacterJSONSchema
+from app.utils.filters import apply_filters
 from app.utils.json_utils import load_characters, save_and_respond
 from app.services.character_json_service import add_character
-
+from app.utils.sorting import apply_sorting
 
 # Create a Blueprint for character-related routes
 characters_json_bp = Blueprint("characters", __name__)
+
+
+@characters_json_bp.route('/characters/json', methods=['GET'])
+def list_characters_json():
+    """
+    Fetch characters from JSON with optional filtering, sorting, and pagination.
+    """
+    characters = load_characters()
+
+    # Get query parameters for filtering, sorting, and pagination
+    filters = request.args.to_dict()
+    sort_by = filters.pop("sort_by", None)
+    sort_order = filters.pop("sort_order", "asc")
+    limit = int(filters.pop("limit", 10))  # Default limit 10
+    skip = int(filters.pop("skip", 0))  # Default skip 0
+
+    # Apply filtering
+    filtered_characters = apply_filters(characters, filters)
+
+    # Apply sorting
+    sorted_characters = apply_sorting(filtered_characters, sort_by, sort_order)
+
+    # Apply pagination
+    paginated_characters = sorted_characters[skip: skip + limit]
+
+    return jsonify({
+        "characters": paginated_characters,
+        "count": len(paginated_characters),
+        "total": len(filtered_characters)
+    }), 200
 
 
 @characters_json_bp.route('/character/json', methods=['POST'])
