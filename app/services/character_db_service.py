@@ -1,6 +1,7 @@
 from app.models.character_model import Character
 from app.utils.filters import apply_filters
 from app.utils.sorting import apply_sorting
+from app.utils.db_utils import safe_commit, get_total_count
 from sqlalchemy.exc import SQLAlchemyError
 from app import handle_sqlalchemy_error, db
 
@@ -17,7 +18,7 @@ def list_characters(filters, sort_by, sort_order, limit, skip):
         query = apply_filters(start_query, filters)
 
         # Get total count *before* pagination
-        total_count = db.session.query(Character).count()
+        total_count = get_total_count(Character)
 
         # Apply sorting
         query = apply_sorting(query, sort_by, sort_order)
@@ -42,10 +43,9 @@ def create_character_db(character_data):
     try:
         character = Character(**character_data.dict())
         db.session.add(character)
-        db.session.commit()
-        return character.to_dict()
+        return safe_commit() or character.to_dict()
+
     except SQLAlchemyError as db_error:
-        db.session.rollback()  # Rollback transaction if commit fails
         return handle_sqlalchemy_error(db_error)
 
 
@@ -61,10 +61,6 @@ def update_character_db(character, validated_data):
             updated_field = True  # Mark that an update occurred
 
     if updated_field:
-        try:
-            db.session.commit()
-        except SQLAlchemyError as db_error:
-            db.session.rollback()
-            return handle_sqlalchemy_error(db_error)
+        return safe_commit() or character.to_dict()
 
     return character.to_dict()

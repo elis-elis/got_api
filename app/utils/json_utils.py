@@ -1,8 +1,7 @@
 import os
 import json
-from uuid import UUID
-
 from flask import jsonify
+
 
 # Path to the JSON file where characters are stored
 CHARACTERS_JSON_PATH = os.path.join(os.path.dirname(__file__), 'characters.json')
