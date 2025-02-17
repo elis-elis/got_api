@@ -11,10 +11,3 @@ def safe_commit():
     except SQLAlchemyError as db_error:
         db.session.rollback()
         return handle_sqlalchemy_error(db_error)
-
-
-def get_total_count(model):
-    """
-    Returns the total count of records for a given SQLAlchemy model.
-    """
-    return db.session.query(model).count()

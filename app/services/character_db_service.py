@@ -53,10 +53,13 @@ def update_character_db(character, validated_data):
     """
     Updates a character in the database, only modifying fields that changed.
     """
-    updated_field = False  # Flag to track if any field is updated
+    updated_field = False  # Flag to track if any field is updated, no updates have been made yet
 
     for key, value in validated_data.items():
+        # Checks if the character object has the field named key
+        # Checks if the current value of that field is different from the new value
         if hasattr(character, key) and getattr(character, key) != value:
+            # If the field exists and needs to be changed, update it with the new value
             setattr(character, key, value)
             updated_field = True  # Mark that an update occurred
 

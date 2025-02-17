@@ -40,7 +40,10 @@ def list_characters_json():
     sorted_characters = apply_sorting(filtered_characters, sort_by, sort_order)
 
     # Apply pagination
-    paginated_characters = sorted_characters[skip: skip + limit]
+    paginated_characters = sorted_characters[skip: skip + limit]   # This is Python's list slicing
+    # skip → The starting index (how many items to skip)
+    # skip + limit → The ending index (where to stop, exclusive)
+    # This technique prevents loading too much data at once by returning only a small portion of the full list
 
     return jsonify({
         "characters": paginated_characters,
