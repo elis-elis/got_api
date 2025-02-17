@@ -28,10 +28,10 @@
         "name": "Tyrion Lannister",
         "house": "Lannister",
         "animal": null,
-        "symbol": "Lion",
+        "symbol": "butterfly",
         "nickname": "The Imp",
-        "role": "Hand of the King",
-        "age": 39,
+        "role": "ass of the King",
+        "age": 39999,
         "death": null,
         "strength": "Intelligence"
     },
@@ -384,18 +384,6 @@
         "strength": "Cunning"
     },
     {
-        "id": 35,
-        "name": "Balon Greyjoy",
-        "house": "Greyjoy",
-        "animal": "Kraken",
-        "symbol": "Kraken",
-        "nickname": "King of the Iron Islands",
-        "role": "King",
-        "age": 60,
-        "death": 6,
-        "strength": "Cunning"
-    },
-    {
         "id": 36,
         "name": "Yara Greyjoy",
         "house": "Greyjoy",
@@ -574,5 +562,17 @@
         "age": 70,
         "death": 7,
         "strength": "Cunning"
+    },
+    {
+        "name": "mimi Tyrell",
+        "house": "Stark",
+        "animal": "ant",
+        "symbol": "vodka",
+        "nickname": "Queen of mud",
+        "role": "Matriarch",
+        "age": 700,
+        "death": 17,
+        "strength": "Physically strong",
+        "id": 51
     }
 ]
