@@ -4,7 +4,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from pydantic import ValidationError
 from app import db, handle_404, handle_sqlalchemy_error, handle_500, handle_validation_error
 from app.models.character_model import Character
-from app.schemas.character_schema import CharacterCreateSchema
+from app.schemas.character_schema import CharacterCreateSchema, CharacterUpdateSchema
 from app.services.character_db_service import list_characters
 from app.utils.filters import get_filter_params
 from app.utils.pagination import get_pagination_params
@@ -100,7 +100,7 @@ def handle_character_db(character_id):
             # Validate and update character fields dynamically using Pydantic schema
             # {**character.to_dict(), **data} → Combines current character data (dictionary) with what the user sends
             # .dict(exclude_unset=True → only update provided fields
-            validated_data = CharacterCreateSchema(**{**character.to_dict(), **data}).dict(exclude_unset=True)
+            validated_data = CharacterUpdateSchema(**data).dict(exclude_unset=True)
 
             # Update character fields dynamically
             for key, value in validated_data.items():

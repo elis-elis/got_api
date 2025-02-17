@@ -46,6 +46,21 @@ class CharacterResponseSchema(BaseModel):
     strength: StrengthResponseSchema
 
 
+class CharacterUpdateSchema(BaseModel):
+    name: Optional[str] = Field(None, max_length=100)
+    house_id: Optional[int] = None
+    animal: Optional[str] = Field(None, max_length=50)
+    symbol: Optional[str] = Field(None, max_length=50)
+    nickname: Optional[str] = Field(None, max_length=50)
+    role: Optional[str] = Field(None, max_length=100)
+    age: Optional[int] = Field(None, ge=0)
+    death: Optional[int] = Field(None, ge=0)
+    strength_id: Optional[int] = Field(None, ge=1)
+
+    class Config:
+        extra = "forbid"  # Prevents users from sending unexpected fields
+
+
 class CharacterJSONSchema(BaseModel):
     name: str
     house: Optional[str]
