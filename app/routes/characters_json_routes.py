@@ -16,6 +16,13 @@ characters_json_bp = Blueprint("characters", __name__)
 def list_characters_json():
     """
     Fetch characters from JSON with optional filtering, sorting, and pagination.
+    Convert query parameters to a dictionary (filters).
+    Extract sorting fields (sort_by, sort_order).
+    Extract pagination fields (limit, skip).
+    Remaining filters are used for filtering characters dynamically.
+
+    Example Request:
+    GET /characters/json?house=Lannister&sort_by=name&limit=5
     """
     characters = load_characters()
 

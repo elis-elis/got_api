@@ -82,7 +82,7 @@ def handle_character_db(character_id):
     """
     Handles fetching (GET), updating (PATCH), and deleting (DELETE) a character by ID.
     - GET: Returns the character details.
-    - PATCH: Partially updates character fields.
+    - PATCH: Partially updates character fields, validates the request payload before updating the character.
     - DELETE: Removes the character from the database.
     """
     character = Character.query.get(character_id)
@@ -98,8 +98,8 @@ def handle_character_db(character_id):
                 return jsonify({"message": "No data provided"}), 400
 
             # Validate and update character fields dynamically using Pydantic schema
-            # {**character.to_dict(), **data} → Combines current character data (dictionary) with what the user sends
-            # .dict(exclude_unset=True → only update provided fields
+            # **data means we are passing data as keyword arguments (key=value)
+            # .dict(exclude_unset=True → only update provided fields, not overwrite existing values
             validated_data = CharacterUpdateSchema(**data).dict(exclude_unset=True)
 
             # Update character fields dynamically
