@@ -1,4 +1,37 @@
-from app.utils.json_utils import load_characters, save_characters
+from app.utils.json_utils import save_characters
+from app.utils.filters import apply_filters
+from app.utils.sorting import apply_sorting
+from app.utils.json_utils import load_characters
+
+
+def list_characters_json(filters, sort_by, sort_order, limit, skip):
+    """
+    Fetch characters from the JSON file with filtering, sorting, and pagination.
+    Returns both count (paginated result) & total (unpaginated count).
+    """
+    try:
+        characters = load_characters()
+
+        # Apply filters dynamically
+        filtered_characters = apply_filters(characters, filters)
+
+        # Get total count before pagination
+        total_count = len(filtered_characters)
+
+        # Apply sorting
+        sorted_characters = apply_sorting(filtered_characters, sort_by, sort_order)
+
+        # Apply pagination
+        paginated_characters = sorted_characters[skip: skip + limit]
+
+        return {
+            "characters": paginated_characters,
+            "count": len(paginated_characters),  # Number of characters returned after pagination
+            "total": total_count  # Total characters before pagination
+        }
+
+    except Exception as e:
+        return {"error": str(e)}
 
 
 def add_character(new_character):
