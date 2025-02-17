@@ -41,14 +41,3 @@ def save_and_respond(message, characters, character=None):
     if character:
         response["character"] = character   # Include updated character if applicable
     return jsonify(response), 200
-
-
-def is_valid_uuid(value):
-    """
-    Check if a value is a valid UUID.
-    """
-    try:
-        UUID(value, version=4)
-        return True
-    except ValueError:
-        return False
