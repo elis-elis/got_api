@@ -45,7 +45,7 @@ This project is a **Flask-based RESTful API** that interacts with a **PostgreSQL
 
 **Authentication**: Flask-JWT-Extended
 
-**Utilities**: Pydantic (for data validation), Marshmallow
+**Utilities**: Pydantic (for data validation)
 
 ---
 
