@@ -1,7 +1,3 @@
-"""
-Separate houses and strengths into their own tables and reference them using foreign keys in the characters table.
-Separating them into distinct tables removes redundancy, enforces uniformity.
-"""
 from app import db
 
 

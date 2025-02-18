@@ -1,26 +1,41 @@
-from pydantic import BaseModel, Field, model_validator, root_validator
+from pydantic import BaseModel, Field
 from typing import Optional
 
 
 class HouseCreateSchema(BaseModel):
+    """
+    Schema for creating a new house. Contains the name of the house.
+    """
     name: str = Field(..., max_length=50)
 
 
 class HouseResponseSchema(BaseModel):
+    """
+    Schema for returning house details with ID and name.
+    """
     id: int
     name: str = Field(..., max_length=50)
 
 
 class StrengthCreateSchema(BaseModel):
+    """
+    Schema for creating a new strength. Contains the description of the strength.
+    """
     description: str = Field(..., max_length=50)
 
 
 class StrengthResponseSchema(BaseModel):
+    """
+    Schema for returning strength details with ID and description.
+    """
     id: int
     description: str = Field(..., max_length=50)
 
 
 class CharacterCreateSchema(BaseModel):
+    """
+    Schema for creating a new character. Includes name, house, strength, and other attributes.
+    """
     name: str = Field(..., max_length=100)
     house_id: Optional[int] = None  # Reference to House ID (nullable)
     animal: Optional[str] = Field(None, max_length=50)
@@ -34,6 +49,9 @@ class CharacterCreateSchema(BaseModel):
 
 # Schema for returning a character (Includes ID + full house and strength details)
 class CharacterResponseSchema(BaseModel):
+    """
+    Schema for returning a character's details, including full house and strength info.
+    """
     id: int
     name: str
     house: Optional[HouseResponseSchema] = None
@@ -47,6 +65,9 @@ class CharacterResponseSchema(BaseModel):
 
 
 class CharacterUpdateSchema(BaseModel):
+    """
+    Schema for updating character details. Allows modification of character attributes.
+    """
     name: Optional[str] = Field(None, max_length=100)
     house_id: Optional[int] = None
     animal: Optional[str] = Field(None, max_length=50)
@@ -62,6 +83,9 @@ class CharacterUpdateSchema(BaseModel):
 
 
 class CharacterJSONSchema(BaseModel):
+    """
+    Schema for accepting character data in JSON format (without ID and full details).
+    """
     name: str
     house: Optional[str]
     animal: Optional[str]
