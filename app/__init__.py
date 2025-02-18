@@ -19,6 +19,7 @@ from app.utils.error_handlers import (
     handle_sqlalchemy_error,
     handle_validation_error
 )
+from app.config import setup_logging
 
 
 # Initialize database / extensions
@@ -61,5 +62,7 @@ def create_app():
     app.register_error_handler(500, handle_500)
     app.register_error_handler(SQLAlchemyError, handle_sqlalchemy_error)
     app.register_error_handler(ValidationError, handle_validation_error)
+
+    setup_logging()  # Ensures logging is configured when the app starts
 
     return app

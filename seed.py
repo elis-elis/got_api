@@ -1,7 +1,9 @@
 import os
 import json
+import logging
 from app import db, create_app
 from app.models.character_model import Character, House, Strength
+
 
 # Initialize the app and database
 app = create_app()
@@ -12,11 +14,10 @@ DATA_FILE = os.path.join(BASE_DIR, "data", "characters.json")  # Construct path
 
 def seed_database():
     """
-    This function:
-    - Loads character data from `data/characters.json`
-    - Ensures that duplicate records are not inserted
-    - Adds new characters to the database
-    - Commits the transaction
+    Loads character data from `data/characters.json` and inserts records into the database.
+    - Ensures no duplicate characters are added.
+    - Ensures related tables (House, Strength) have correct entries.
+    - Uses bulk insert for efficiency.
 
     The function runs within an application context to allow database operations.
     """
@@ -25,7 +26,7 @@ def seed_database():
             with open(DATA_FILE, "r") as file:
                 characters = json.load(file)
         except (FileNotFoundError, json.JSONDecodeError) as e:
-            print(f"Error loading character data: {e}")
+            logging.error(f"Error loading character data: {e}")
             return
 
         # Fetch existing characters in one query (to prevent repeated DB calls)
@@ -33,7 +34,6 @@ def seed_database():
 
         new_characters = []
 
-        # Insert houses and strengths if they don't already exist
         for character_data in characters:
             if character_data["name"] in existing_names:
                 continue  # Skip duplicates
@@ -52,32 +52,30 @@ def seed_database():
                 db.session.add(strength)
                 db.session.flush()
 
-                # Append new character to the list
-                new_characters.append(
-                    Character(
-                        name=character_data["name"],
-                        house=house,
-                        animal=character_data.get("animal"),
-                        symbol=character_data.get("symbol"),
-                        nickname=character_data.get("nickname"),
-                        role=character_data["role"],
-                        age=character_data.get("age"),
-                        death=character_data.get("death"),
-                        strength=strength
-                    )
+            # Append new character to the list
+            new_characters.append(
+                Character(
+                    name=character_data["name"],
+                    house=house,
+                    animal=character_data.get("animal"),
+                    symbol=character_data.get("symbol"),
+                    nickname=character_data.get("nickname"),
+                    role=character_data["role"],
+                    age=character_data.get("age"),
+                    death=character_data.get("death"),
+                    strength=strength
                 )
-            # Bulk insert all new characters
-            db.session.bulk_save_objects(new_characters)
+            )
         try:
+            # Bulk insert all new characters
+            if new_characters:
+                db.session.bulk_save_objects(new_characters)
             db.session.commit()
-            print("Lovely! Database successfully added!")
-
-        except (FileNotFoundError, json.JSONDecodeError) as e:
-            print(f"Error loading character data: {e}")
+            logging.info("Congrats! Database seeding completed successfully!")
 
         except Exception as e:
             db.session.rollback()  # Roll back any partial inserts
-            print(f"Database error: {e}")
+            logging.error(f"Database error: {e}")
 
 
 if __name__ == "__main__":
