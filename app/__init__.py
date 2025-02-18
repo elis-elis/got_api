@@ -62,11 +62,4 @@ def create_app():
     app.register_error_handler(SQLAlchemyError, handle_sqlalchemy_error)
     app.register_error_handler(ValidationError, handle_validation_error)
 
-    # Ensure DB tables exist (only useful in dev mode)
-    with app.app_context():
-        try:
-            db.create_all()  # ❗ Only safe for local dev; remove in production
-        except Exception as e:
-            print(f"Database initialization failed: {e}")
-
     return app
