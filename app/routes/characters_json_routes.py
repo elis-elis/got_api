@@ -1,12 +1,11 @@
 from flask import Blueprint, request, jsonify
 from pydantic import ValidationError
 from app import handle_500, handle_validation_error
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required
 from app.schemas.character_schema import CharacterJSONSchema
-from app.utils.filters import apply_filters
 from app.utils.json_utils import load_characters, save_and_respond
-from app.services.character_json_service import add_character
-from app.utils.sorting import apply_sorting
+from app.services.character_json_service import add_character, show_characters_json
+
 
 # Create a Blueprint for character-related routes
 characters_json_bp = Blueprint("characters", __name__)
@@ -24,8 +23,6 @@ def list_characters_json():
     Example Request:
     GET /characters/json?house=Lannister&sort_by=name&limit=5
     """
-    characters = load_characters()
-
     # Get query parameters for filtering, sorting, and pagination
     filters = request.args.to_dict()
     sort_by = filters.pop("sort_by", None)
@@ -33,23 +30,13 @@ def list_characters_json():
     limit = int(filters.pop("limit", 10))  # Default limit 10
     skip = int(filters.pop("skip", 0))  # Default skip 0
 
-    # Apply filtering
-    filtered_characters = apply_filters(characters, filters)
+    result = show_characters_json(filters, sort_by, sort_order, limit, skip)
 
-    # Apply sorting
-    sorted_characters = apply_sorting(filtered_characters, sort_by, sort_order)
+    # Check if the result contains an error (by checking if it is a dictionary and contains the 'error' key)
+    if isinstance(result, dict) and "error" in result:
+        return jsonify({"error": result["error"]}), 400
 
-    # Apply pagination
-    paginated_characters = sorted_characters[skip: skip + limit]   # This is Python's list slicing
-    # skip → The starting index (how many items to skip)
-    # skip + limit → The ending index (where to stop, exclusive)
-    # This technique prevents loading too much data at once by returning only a small portion of the full list
-
-    return jsonify({
-        "characters": paginated_characters,
-        "count": len(paginated_characters),
-        "total": len(filtered_characters)
-    }), 200
+    return jsonify(result), 200
 
 
 @characters_json_bp.route('/character/json', methods=['POST'])

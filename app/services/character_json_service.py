@@ -4,7 +4,7 @@ from app.utils.sorting import apply_sorting
 from app.utils.json_utils import load_characters
 
 
-def list_characters_json(filters, sort_by, sort_order, limit, skip):
+def show_characters_json(filters, sort_by, sort_order, limit, skip):
     """
     Fetch characters from the JSON file with filtering, sorting, and pagination.
     Returns both count (paginated result) & total (unpaginated count).
@@ -22,8 +22,12 @@ def list_characters_json(filters, sort_by, sort_order, limit, skip):
         sorted_characters = apply_sorting(filtered_characters, sort_by, sort_order)
 
         # Apply pagination
-        paginated_characters = sorted_characters[skip: skip + limit]
+        paginated_characters = sorted_characters[skip: skip + limit]   # This is Python's list slicing
+        # skip → The starting index (how many items to skip)
+        # skip + limit → The ending index (where to stop, exclusive)
+        # This technique prevents loading too much data at once by returning only a small portion of the full list
 
+        # Return the result (paginated data + metadata)
         return {
             "characters": paginated_characters,
             "count": len(paginated_characters),  # Number of characters returned after pagination
