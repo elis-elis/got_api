@@ -50,7 +50,6 @@ def create_character_for_db():
     Endpoint to create a new character and save it to the database.
     """
     try:
-        current_user = get_jwt_identity()
         data = request.get_json()
         if not data:
             return jsonify({"message": "No data provided"}), 400

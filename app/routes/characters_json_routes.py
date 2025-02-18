@@ -65,9 +65,6 @@ def create_character():
     Consideration: The data is lost if the server is restarted. For more permanent storage, switch to a database.
     """
     try:
-        # Get the user identity from the JWT
-        current_user = get_jwt_identity()  # for authentication purpose, although not used here directly
-
         # Get JSON data from the request
         data = request.get_json()
         if not data:
