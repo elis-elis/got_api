@@ -28,33 +28,28 @@ def apply_sorting(query, sort_by, sort_order):
     if sort_by not in ALLOWED_SORT_FIELDS:
         return query  # If the sorting field is not recognized, return the query unchanged
 
-    sort_func = asc if sort_order == "asc" else desc  # Determine sorting order
+    # Map of sort fields to their corresponding columns (and optional joins)
+    sort_fields = {
+        "name": Character.name,
+        "age": Character.age,
+        "house": House.name,
+        "role": Character.role,
+        "nickname": Character.nickname,
+        "animal": Character.animal,
+        "symbol": Character.symbol,
+        "death": Character.death,
+        "strength": Strength.description
+    }
+    # Check if the field exists in the map
+    if sort_by not in sort_fields:
+        return query  # If field is not found, return query unchanged
 
-    if sort_by == "name":
-        query = query.order_by(sort_func(Character.name))
+    # Determine the sorting function
+    sort_func = asc if sort_order == "asc" else desc
 
-    elif sort_by == "age":
-        query = query.order_by(sort_func(Character.age))
+    # If sorting by 'house' or 'strength', perform the join first
+    if sort_by in ["house", "strength"]:
+        query = query.join(House if sort_by == "house" else Strength)
 
-    elif sort_by == "house":
-        query = query.join(House).order_by(sort_func(House.name))
-
-    elif sort_by == "role":
-        query = query.order_by(sort_func(Character.role))
-
-    elif sort_by == "nickname":
-        query = query.order_by(sort_func(Character.nickname))
-
-    elif sort_by == "animal":
-        query = query.order_by(sort_func(Character.animal))
-
-    elif sort_by == "symbol":
-        query = query.order_by(sort_func(Character.symbol))
-
-    elif sort_by == "death":
-        query = query.order_by(sort_func(Character.death))
-
-    elif sort_by == "strength":
-        query = query.join(Strength).order_by(sort_func(Strength.description))
-
-    return query
+    # Apply the sorting
+    return query.order_by(sort_func(sort_fields[sort_by]))
