@@ -23,9 +23,14 @@ def get_sorting_params():
 
 def apply_sorting(query, sort_by, sort_order):
     """
-    Apply sorting dynamically based on the user request.
+    Modify an existing query object by dynamically adding sorting and joins based on the sort_by and sort_order
+    parameters. The query object is created earlier in the code, and passed into this function as an argument.
+    The Character model has a relationship with the House and Strength models. When sorting by either of these fields,
+    need to perform a SQL join between the Character table and the related table (House or Strength)
+    in order to access the field it is sorted by.
     """
     if sort_by not in ALLOWED_SORT_FIELDS:
+        # sort_by - the column name passed by the user
         return query  # If the sorting field is not recognized, return the query unchanged
 
     # Map of sort fields to their corresponding columns (and optional joins)
@@ -49,7 +54,10 @@ def apply_sorting(query, sort_by, sort_order):
 
     # If sorting by 'house' or 'strength', perform the join first
     if sort_by in ["house", "strength"]:
+        # conditional expression
         query = query.join(House if sort_by == "house" else Strength)
 
     # Apply the sorting
     return query.order_by(sort_func(sort_fields[sort_by]))
+    # query = query.order_by(sort_func(Strength.description))  # Sorting by strength description
+    # query = query.order_by(sort_func(House.name))  # Sorting by house name
