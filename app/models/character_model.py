@@ -11,11 +11,13 @@ class House(db.Model):
         id (int): The unique identifier for each house.
         name (str): The name of the house, must be unique.
     """
+    # When inherit db.Model, the class automatically becomes a mapped table in the database
     __tablename__ = "houses"
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False, unique=True)
 
+    # A house can have multiple characters, one-to-many relationship between House and Character
     characters = db.relationship("Character", back_populates="house")
 
     def __repr__(self):

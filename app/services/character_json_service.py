@@ -2,6 +2,7 @@ from app.utils.json_utils import save_characters
 from app.utils.filters import apply_filters
 from app.utils.sorting import apply_sorting
 from app.utils.json_utils import load_characters
+import random
 
 
 def show_characters_json(filters, sort_by, sort_order, limit, skip):
@@ -21,11 +22,14 @@ def show_characters_json(filters, sort_by, sort_order, limit, skip):
         # Apply sorting
         sorted_characters = apply_sorting(filtered_characters, sort_by, sort_order)
 
-        # Apply pagination
-        paginated_characters = sorted_characters[skip: skip + limit]   # This is Python's list slicing
-        # skip → The starting index (how many items to skip)
-        # skip + limit → The ending index (where to stop, exclusive)
-        # This technique prevents loading too much data at once by returning only a small portion of the full list
+        # Handle random selection if limit and skip are absent
+        if limit == "random":
+            paginated_characters = random.sample(sorted_characters, min(20, len(sorted_characters)))
+        else:
+            paginated_characters = sorted_characters[skip: skip + limit]   # This is Python's list slicing
+            # skip → The starting index (how many items to skip)
+            # skip + limit → The ending index (where to stop, exclusive)
+            # This technique prevents loading too much data at once by returning only a small portion of the full list
 
         # Return the result (paginated data + metadata)
         return {

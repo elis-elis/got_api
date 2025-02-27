@@ -5,7 +5,7 @@ from flask_jwt_extended import jwt_required
 from app.schemas.character_schema import CharacterJSONSchema
 from app.utils.json_utils import load_characters, save_and_respond
 from app.services.character_json_service import add_character, show_characters_json
-
+from app.utils.pagination import get_pagination_params
 
 # Create a Blueprint for character-related routes
 characters_json_bp = Blueprint("characters", __name__)
@@ -27,8 +27,9 @@ def list_characters_json():
     filters = request.args.to_dict()
     sort_by = filters.pop("sort_by", None)
     sort_order = filters.pop("sort_order", "asc")
-    limit = int(filters.pop("limit", 10))  # Default limit 10
-    skip = int(filters.pop("skip", 0))  # Default skip 0
+
+    # Extract pagination parameters (returns "random" if both are missing)
+    limit, skip = get_pagination_params()
 
     result = show_characters_json(filters, sort_by, sort_order, limit, skip)
 
