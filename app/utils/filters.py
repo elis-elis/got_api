@@ -2,31 +2,51 @@ from flask import request
 from app.models.character_model import Character, House, Strength
 
 
+# Define constraints
+MAX_STRING_LENGTH = 50  # Prevents excessively long filter values
+AGE_MIN, AGE_MAX = 0, 150  # Reasonable age range for validation
+
+
 def get_filter_params():
     """
     Collects filter parameters from the URL query string, ensuring proper type validation.
     Returns a dictionary of valid filters, ignoring invalid inputs.
     """
-    filters = {
-        "name": request.args.get('name', type=str),
-        "house": request.args.get('house', type=str),
-        "strength": request.args.get('strength', type=str),
-        "animal": request.args.get('animal', type=str),
-        "role": request.args.get('role', type=str)
-    }
+    filters = {}
+
+    # Define allowed string fields with max length enforcement
+    string_fields = ["name", "house", "strength", "animal", "role"]
+    for field in string_fields:
+        value = request.args.get(field, type=str)
+        if value:
+            if len(value) > MAX_STRING_LENGTH:
+                raise ValueError(f"Invalid value for {field}. Max length is {MAX_STRING_LENGTH} characters.")
+            filters[field] = value.strip()  # Strip leading/trailing spaces
 
     # Validate integer filters
-    int_fields = ["age", "age_more_than", "age_less_than", "strength_id", "house_id"]
+    int_fields = {
+        "age": (AGE_MIN, AGE_MAX),
+        "age_more_than": (AGE_MIN, AGE_MAX),
+        "age_less_than": (AGE_MIN, AGE_MAX),
+        "strength_id": (1, None),  # IDs must be positive numbers
+        "house_id": (1, None)  # IDs must be positive numbers
+    }
 
-    for field in int_fields:
+    for field, (min_val, max_val) in int_fields.items():
         value = request.args.get(field)
         if value is not None:
             if not value.isdigit():  # faster check, .isdigit() ensures only numbers are accepted before conversion
                 raise ValueError(f"Uff. Invalid value for {field}. Must be a number.")
-            filters[field] = int(value)
 
-    # Create a new dictionary that only contains the filters with actual values (i.e., value is not None).
-    return {key: value for key, value in filters.items() if value is not None}
+            num_value = int(value)
+
+            # Enforce valid range (if max_val is specified)
+            if num_value < min_val or (max_val and num_value > max_val):
+                raise ValueError(f"Invalid value for {field}. Must be between {min_val} and {max_val}.")
+
+            filters[field] = num_value
+
+    return filters
 
 
 def apply_filters(query, filters):
