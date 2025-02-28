@@ -7,6 +7,7 @@ from app.utils.json_utils import load_characters, save_and_respond
 from app.services.character_json_service import add_character, show_characters_json
 from app.utils.pagination import get_pagination_params
 
+
 # Create a Blueprint for character-related routes
 characters_json_bp = Blueprint("characters", __name__)
 

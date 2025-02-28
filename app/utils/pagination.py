@@ -13,13 +13,13 @@ def get_pagination_params():
     limit = request.args.get('limit', type=int, default=20)
     skip = request.args.get('skip', type=int, default=0)
 
-    # If no limit/skip is provided, we return a random 20 characters
-    if limit is None and skip is None:
-        return "random", 20  # Special flag to indicate random selection
+    # If limit and skip are completely absent, enable random selection
+    if "limit" not in request.args and "skip" not in request.args:
+        return "random", None  # Special flag for random selection
 
     # Default values
-    limit = limit if not None else 20
-    skip = skip if not None else 0
+    limit = limit if limit is not None else 20
+    skip = skip if skip is not None else 0
 
     if limit <= 0:
         raise ValueError("Limit must be greater than 0.")

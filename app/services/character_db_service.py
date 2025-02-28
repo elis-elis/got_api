@@ -1,3 +1,4 @@
+from sqlalchemy import func
 from app.models.character_model import Character
 from app.utils.filters import apply_filters
 from app.utils.sorting import apply_sorting
@@ -20,11 +21,13 @@ def list_characters(filters, sort_by, sort_order, limit, skip):
         # Get total count *before* pagination
         total_count = get_total_count(Character)
 
-        # Apply sorting
-        query = apply_sorting(query, sort_by, sort_order)
-
-        # Fetch (only necessary records) characters from the db with pagination, prevents loading too much data at once
-        characters = query.offset(skip).limit(limit).all()
+        # Apply sorting (unless using random)
+        if limit == "random":
+            query = query.order_by(func.random()).limit(20)  # Select 20 random rows
+            characters = query.all()
+        else:
+            query = apply_sorting(query, sort_by, sort_order)
+            characters = query.offset(skip).limit(limit).all()
 
         return {
                 "characters": [character.to_dict() for character in characters],
